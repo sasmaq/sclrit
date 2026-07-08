@@ -3,7 +3,7 @@
 ## Seclore File Protection for Nextcloud (`files_seclore`)
 
 | | |
-|---|---|
+| --- | --- |
 | **App ID** | `files_seclore` |
 | **Target platform** | Nextcloud 31 (Hub 10) |
 | **Document status** | Draft v0.1 |
@@ -66,7 +66,7 @@ This document describes the design of **Seclore File Protection** (`files_seclor
 ### 1.3 Definitions and abbreviations
 
 | Term | Meaning |
-|---|---|
+| --- | --- |
 | **EDRM** | Enterprise Digital Rights Management: persistent, file-embedded usage policies. |
 | **Policy Server** | The Seclore server component that authenticates, applies protection, issues licenses, and hosts the REST API. On-premises or Seclore cloud. |
 | **Hot Folder** | Seclore's container for a protection policy: a predefined set of users/groups and usage permissions. Protecting "into" a Hot Folder applies that policy. Referred to as *policy* in the UI. |
@@ -85,7 +85,7 @@ This document describes the design of **Seclore File Protection** (`files_seclor
 ### 1.5 Assumptions and constraints
 
 | # | Assumption / constraint |
-|---|---|
+| --- | --- |
 | A1 | A Seclore Policy Server is reachable from the Nextcloud server over HTTPS. No inbound connectivity from Seclore to Nextcloud is required. |
 | A2 | The organization registers this app on the Policy Server as an enterprise application and provisions API credentials (app ID + secret, or equivalent) with rights to protect/unprotect and list Hot Folders. |
 | A3 | Nextcloud 31, PHP ≥ 8.1. The app declares `min-version="31" max-version="31"` initially. |
@@ -131,7 +131,7 @@ Nextcloud is the system of record for the file; Seclore is the system of record 
 ### 2.2 Personas and primary user stories
 
 | Persona | Story |
-|---|---|
+| --- | --- |
 | **End user** (member of an allowed group) | "I select a contract in the Files app, choose *Protect with Seclore*, pick the 'External legal' policy, and within seconds the file is protected. Anyone I share it with is bound by that policy." |
 | **End user** | "I protected a 2 GB video. The UI told me it was queued; I got a notification when it finished." |
 | **Compliance officer** (member of the unprotect group) | "I can remove protection from a file when legally required, and that action is audited." |
@@ -141,7 +141,7 @@ Nextcloud is the system of record for the file; Seclore is the system of record 
 ### 2.3 Key design decisions
 
 | # | Decision | Alternatives considered / rationale |
-|---|---|---|
+| --- | --- | --- |
 | D1 | **Replace content in place** (same node/fileId/name). | *Keep original + create protected copy*: rejected — leaving an unprotected original defeats the purpose of DRM and doubles storage. In-place keeps shares, links, and sync relationships intact. |
 | D2 | **All crypto is delegated to the Seclore Policy Server.** The app never implements the Seclore format. | Local SDK/agent integration: heavier operational footprint, platform-specific binaries; REST keeps the app pure-PHP and portable. |
 | D3 | **Adapter interface (`ISecloreClient`) isolates the Seclore API contract.** Endpoint paths and payload shapes are confined to one class and integration-tested against the customer's Policy Server version. | Seclore's REST API is licensed documentation and varies by server version; hard-coding it throughout the app would make version drift expensive. |
@@ -204,7 +204,7 @@ flowchart TB
 ### 3.2 Technology stack
 
 | Layer | Choice | Notes |
-|---|---|---|
+| --- | --- | --- |
 | Backend | PHP 8.1+, Nextcloud App Framework (`OCP\AppFramework`) | Dependency injection via `Application::register()`; strict types; psalm level ≤ 4. |
 | HTTP client | `OCP\Http\Client\IClientService` | Server-managed Guzzle: honors instance proxy settings and CA bundle; supports streamed bodies and multipart. |
 | Persistence | `OCP\AppFramework\Db\QBMapper` + migrations (`SimpleMigrationStep`) | Must work on MySQL/MariaDB, PostgreSQL, SQLite (dev). |
@@ -361,7 +361,7 @@ stateDiagram-v2
 All routes are OCS (`OCSController`), CSRF-protected by the OCS token, under `/ocs/v2.php/apps/files_seclore/`. Declared with route attributes (`#[ApiRoute]`); user endpoints carry `#[NoAdminRequired]` and rate limits (`#[UserRateLimit]`).
 
 | Method & route | Body / params | Success response | Notes |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `POST /api/v1/protect` | `{fileId: int, hotFolderId?: string}` | `200` `{state}` (sync) or `202` `{state}` (queued) | `hotFolderId` defaults to admin default. Errors: `403` not allowed / no edit permission, `404` file, `409` already protected or concurrent edit, `422` unknown policy, `502` Seclore error. |
 | `POST /api/v1/unprotect` | `{fileId: int}` | `200/202` `{state}` | `403` unless caller in `unprotect_groups`. |
 | `GET /api/v1/status` | `fileIds[]=1&fileIds[]=2` (≤ 200 ids) | `200` `{states: {fileId: state}}` | Used by the files list and sidebar. |
@@ -378,7 +378,7 @@ The app also registers a **capability** (`OCP\Capabilities\ICapability`) adverti
 ### 4.4 `occ` commands
 
 | Command | Behavior |
-|---|---|
+| --- | --- |
 | `occ files_seclore:test` | Connection + auth + policy listing check; exit code for monitoring. |
 | `occ files_seclore:protect --user <uid> <path> [--policy <id>] [--recursive]` | Protect a file (or files under a folder with `--recursive`), synchronously, streaming progress. Intended for admin/batch use. |
 | `occ files_seclore:status [--failed]` | Tabular dump of state rows; `--failed` filters for triage. |
@@ -433,7 +433,7 @@ All dialogs and actions use `@nextcloud/vue` components (keyboard/focus manageme
 One row per file that has ever been protected or has an in-flight/failed request.
 
 | Column | Type | Constraints | Purpose |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `id` | bigint | PK, autoincrement | — |
 | `file_id` | bigint | **unique**, indexed | Nextcloud file id (stable across rename/move). |
 | `status` | varchar(16) | not null | `pending` \| `processing` \| `protected` \| `failed`. (`none` = row absent.) |
@@ -499,7 +499,7 @@ If the deployed Policy Server version uses HMAC request signing instead of beare
 > ⚠️ **The Seclore REST API is licensed documentation and versioned per deployment. The paths and payloads below are indicative placeholders to shape the adapter; they must be confirmed against the customer's Policy Server API guide before implementation** (tracked in [§15](#15-open-questions)). The base path is admin-configurable (`base_url`).
 
 | Operation | Indicative call | Adapter method |
-|---|---|---|
+| --- | --- | --- |
 | Authenticate app | `POST {base}/auth/token` `{appId, secret}` → `{token, expiresIn}` | `TokenStore` |
 | List policies | `GET {base}/hotfolders` → `[{id, name, description}]` | `listHotFolders()` |
 | Protect | `POST {base}/files/protect` — multipart: `file` (stream), `hotFolderId`, `ownerEmail?` → protected bytes (stream) + `X-Seclore-File-Id` header or JSON envelope | `protect()` |
@@ -509,7 +509,7 @@ If the deployed Policy Server version uses HMAC request signing instead of beare
 ### 7.4 Error mapping and resilience
 
 | Seclore response | Mapped exception | User-facing behavior |
-|---|---|---|
+| --- | --- | --- |
 | Network error / timeout | `SecloreUnavailableException` *(retryable)* | "Protection service unreachable — try again later." Async path retries with backoff (max 3). |
 | `401/403` after one token refresh | `SecloreAuthException` | Admin-oriented error; logged at `error`; settings page shows failing test. |
 | `404` policy | `PolicyNotFoundException` | "Policy no longer exists"; policy cache invalidated. |
@@ -560,7 +560,7 @@ The async path differs only after authorization: the state row is written as `pe
 ### 8.2 Authorization model
 
 | Action | Requirement |
-|---|---|
+| --- | --- |
 | Protect | Member of `allowed_groups` (empty ⇒ all users) **and** `PERMISSION_UPDATE` on the node. Sharees with edit rights may protect shared files — the audit records the actor, and the operation is visible in the owner's activity stream. |
 | Unprotect | Member of `unprotect_groups` (empty ⇒ nobody, not even admins, until configured) **and** `PERMISSION_UPDATE`. Confirmation dialog + mandatory audit event. |
 | Configure / test connection | Nextcloud admin. |
@@ -571,7 +571,7 @@ The async path differs only after authorization: the state row is written as `pe
 Replacing file content does not by itself remove every trace of the unprotected original. The design addresses each known residue:
 
 | Residue | Handling |
-|---|---|
+| --- | --- |
 | **File versions** | Pre-protection versions contain plaintext. `purge_versions` (default **on**) deletes them after successful protection; the toggle and its recoverability trade-off are documented in the admin UI (D7). |
 | **Previews** | Nextcloud invalidates previews on content change (ETag bump). Verified in integration tests; protected content yields no previews (unsupported format ⇒ none generated). |
 | **Full-text search** | If `files_fulltextsearch`/similar is installed, extracted plaintext may persist in the index until the file is re-indexed. Documented operational note; the content-change event triggers re-index on standard setups. |
@@ -596,7 +596,7 @@ Protecting a file transmits its **full content**, filename, the acting user's em
 ## 9. Failure handling and edge cases
 
 | # | Case | Behavior |
-|---|---|---|
+| --- | --- | --- |
 | E1 | File modified between read and write-back | ETag mismatch ⇒ abort, state `failed(conflict)`, original untouched, user told to retry. |
 | E2 | File deleted mid-flight (async) | Job re-resolution fails ⇒ state row removed, job ends silently with an info log. |
 | E3 | Already protected (per DB) | `409`; UI hides the action anyway. Re-protection with a different policy is a v2 feature. |
@@ -637,7 +637,7 @@ Protecting a file transmits its **full content**, filename, the acting user's em
 ## 12. Testing strategy
 
 | Level | Coverage |
-|---|---|
+| --- | --- |
 | **Unit (phpunit)** | `ProtectionService` state machine and guards (mock `ISecloreClient`, in-memory Files stubs); `TokenStore` expiry/refresh/mutex; error mapping table (§7.4) exhaustively; `ConfigService` defaults. |
 | **Contract / integration** | `SecloreClient` against a **stub Policy Server** (fixture container replaying recorded request/response pairs) in CI; the same suite runs against a real Seclore sandbox in a nightly job to catch API drift — this is the executable form of §7.3's "confirm the endpoints". |
 | **Server integration** | App installed into a Nextcloud 31 CI container (sqlite + pgsql matrices): protect small/large (sync/async), conflict (E1), quota (E9), versions-purge behavior (D7), metadata flag propagation, occ commands. |
@@ -673,7 +673,7 @@ Protecting a file transmits its **full content**, filename, the acting user's em
 Items to resolve with the customer's Seclore deployment **before implementation starts**; each lands in the adapter or config, not in the core design.
 
 | # | Question | Impacts |
-|---|---|---|
+| --- | --- | --- |
 | Q1 | Exact Policy Server product/version and its REST API guide (endpoint paths, auth scheme: bearer vs HMAC, payload shapes). | §7.3 adapter implementation; CI stub fixtures. |
 | Q2 | Does the protect API support **on-behalf-of** ownership (acting user's email), or are all files owned by the service account / Hot Folder owner? | §7.1 signature, audit semantics, A4. |
 | Q3 | Output naming: does protection preserve the native extension for all formats, or produce wrappers (e.g. `.html` Seclore Lite) for some types? | D1 in-place replacement; UX copy; possibly a rename step. |
@@ -689,7 +689,7 @@ Items to resolve with the customer's Seclore deployment **before implementation 
 All under app `files_seclore` via `IAppConfig`.
 
 | Key | Type | Default | Sensitive | Description |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
 | `base_url` | string | — | no | Policy Server API base URL (HTTPS enforced). |
 | `app_id` | string | — | no | Enterprise application identifier. |
 | `app_secret` | string | — | **yes** | Enterprise application secret. |
@@ -706,7 +706,7 @@ All under app `files_seclore` via `IAppConfig`.
 ## Appendix B — API error codes (OCS)
 
 | HTTP | `code` | Meaning |
-|---|---|---|
+| --- | --- | --- |
 | 403 | `not_allowed` / `no_permission` | Group gate or missing `PERMISSION_UPDATE`. |
 | 404 | `file_not_found` | Node not resolvable for the caller. |
 | 409 | `already_protected` / `in_progress` / `conflict` | Duplicate, concurrent, or ETag-conflicted request. |
