@@ -1,0 +1,27 @@
+{
+    "name": "sclrit/files_seclore",
+    "description": "Nextcloud app: protect files on demand with Seclore Enterprise DRM",
+    "type": "project",
+    "license": "AGPL-3.0-or-later",
+    "require": {
+        "php": ">=8.1"
+    },
+    "require-dev": {
+        "nextcloud/ocp": "dev-stable31"
+    },
+    "autoload": {
+        "psr-4": {
+            "OCA\\FilesSeclore\\": "lib/"
+        }
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "platform": {
+            "php": "8.1"
+        },
+        "sort-packages": true
+    },
+    "scripts": {
+        "lint": "find lib -name '*.php' -print0 | xargs -0 -n1 php -l"
+    }
+}

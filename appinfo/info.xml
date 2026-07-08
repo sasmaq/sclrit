@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<info xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="https://apps.nextcloud.com/schema/apps/info.xsd">
+	<id>files_seclore</id>
+	<name>Seclore File Protection</name>
+	<summary>Protect files on demand with Seclore Enterprise DRM</summary>
+	<description><![CDATA[
+Apply persistent Seclore usage policies (view, edit, print, copy, validity, watermarking, …) to files directly from Nextcloud.
+
+Protection is performed by your organisation's Seclore Policy Server. The protected file replaces the original in place, so shares, links and sync keep working while Seclore enforces the policy wherever the file travels.
+
+**Note:** protecting a file transmits its content to the configured Seclore Policy Server. See the documentation for details.
+	]]></description>
+	<version>0.1.0</version>
+	<licence>agpl</licence>
+	<author mail="sas111my@gmail.com">S. Almuqwashy</author>
+	<namespace>FilesSeclore</namespace>
+	<category>files</category>
+	<category>security</category>
+	<bugs>https://example.invalid/sclrit/issues</bugs>
+	<dependencies>
+		<php min-version="8.1"/>
+		<nextcloud min-version="31" max-version="31"/>
+	</dependencies>
+	<commands>
+		<command>OCA\FilesSeclore\Command\TestConnection</command>
+	</commands>
+</info>
