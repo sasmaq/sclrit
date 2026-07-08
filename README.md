@@ -6,18 +6,27 @@ Protect files on demand with [Seclore](https://www.seclore.com) Enterprise Digit
 
 ## Status
 
-Backend foundation scaffold — **not yet functional end to end**.
+Feature-complete for the core protect/unprotect flow — **pending reconciliation of the Seclore API contract (SDD §15 Q1) and integration testing against a real Nextcloud 31 + Policy Server**.
 
 - [x] App skeleton (`appinfo/info.xml`, bootstrap, DI wiring)
 - [x] `ISecloreClient` adapter interface + HTTP implementation against the *indicative* API contract (SDD §7.3 — must be reconciled with your Policy Server's API guide, SDD §15 Q1)
 - [x] Token caching (`TokenStore`), policy caching (`PolicyService`), typed config (`ConfigService`)
 - [x] Database schema (`oc_seclore_state`) + entity/mapper
 - [x] `occ files_seclore:test` connection check
-- [ ] `ProtectionService` orchestration (SDD §4.1) + OCS API (SDD §4.3)
-- [ ] Background jobs for large files (SDD §4.2)
-- [ ] Files UI: action, policy picker, status badge/sidebar (SDD §5)
-- [ ] Admin settings UI (SDD §4.6)
+- [x] `ProtectionService` orchestration (SDD §4.1): ETag compare-and-swap, version purge, files-metadata projection, state machine
+- [x] OCS API (SDD §4.3): protect/unprotect/retry/status/policies, admin config + test-connection, capability
+- [x] Background jobs for large files (SDD §4.2) + stale-state watchdog (SDD §9 E14)
+- [x] Files UI (SDD §5): protect/unprotect actions (single + batch), policy picker, inline protected badge, Seclore sidebar tab
+- [x] Admin settings UI (SDD §4.6): connection + test, default policy, group gates, thresholds (Admin settings → Security)
 - [ ] Activity / notifications (SDD §4.6)
+- [ ] State-row lifecycle listener on file deletion (SDD §6.1)
+
+## Building the frontend
+
+```sh
+npm ci
+npm run build     # outputs js/files_seclore-main.mjs
+```
 
 ## Requirements
 
@@ -35,7 +44,7 @@ occ app:enable files_seclore
 
 ## Configuration
 
-Until the settings UI lands, configure via `occ`:
+Configure in the web UI under **Administration settings → Security → Seclore File Protection** (connection, default policy, group gates, thresholds, connection test), or via `occ`:
 
 ```sh
 occ config:app:set files_seclore base_url --value="https://policy.example.com/api"

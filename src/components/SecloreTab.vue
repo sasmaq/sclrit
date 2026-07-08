@@ -80,7 +80,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue'
+import Vue from 'vue'
 import { getCapabilities } from '@nextcloud/capabilities'
 import { showError, showInfo, showSuccess } from '@nextcloud/dialogs'
 import { translate as t } from '@nextcloud/l10n'
@@ -106,7 +106,9 @@ interface FileInfo {
 
 const PERMISSION_UPDATE = 2
 
-export default defineComponent({
+// Vue.extend instead of defineComponent: the 2.7 defineComponent typings fail
+// to infer the methods of this component (async methods + no props).
+export default Vue.extend({
 	name: 'SecloreTab',
 
 	components: {
@@ -155,13 +157,13 @@ export default defineComponent({
 		t,
 
 		/** Entry point used by the sidebar tab wrapper (mount and update). */
-		setFileInfo(fileInfo: FileInfo) {
+		setFileInfo(fileInfo: FileInfo): void {
 			this.fileInfo = fileInfo
 			this.state = null
 			this.load()
 		},
 
-		async load() {
+		async load(): Promise<void> {
 			if (!this.fileInfo) {
 				return
 			}
@@ -182,7 +184,7 @@ export default defineComponent({
 			}
 		},
 
-		async protect() {
+		async protect(): Promise<void> {
 			if (!this.fileInfo) {
 				return
 			}
@@ -207,7 +209,7 @@ export default defineComponent({
 			}
 		},
 
-		async retry() {
+		async retry(): Promise<void> {
 			if (!this.fileInfo) {
 				return
 			}
@@ -223,7 +225,7 @@ export default defineComponent({
 			}
 		},
 
-		async unprotect() {
+		async unprotect(): Promise<void> {
 			if (!this.fileInfo) {
 				return
 			}

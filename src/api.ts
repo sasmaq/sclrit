@@ -68,6 +68,61 @@ export async function fetchPolicies(bypassCache = false): Promise<PolicyList> {
 	return policyCache
 }
 
+export interface AdminConfig {
+	baseUrl: string
+	appId: string
+	appSecretSet: boolean
+	defaultHotFolder: string
+	allowedGroups: string[]
+	unprotectGroups: string[]
+	syncMaxSize: number
+	requestTimeoutMax: number
+	verifyTls: boolean
+	purgeVersions: boolean
+	policyCacheTtl: number
+	staleAfter: number
+}
+
+export interface ConnectionTestResult {
+	ok: boolean
+	policyCount: number | null
+	error: string | null
+}
+
+export async function fetchAdminConfig(): Promise<AdminConfig> {
+	const { data } = await axios.get(apiUrl('/admin/config'))
+	return data.ocs.data
+}
+
+/**
+ * Partial update; the caller must have confirmed the password first
+ * (the endpoint is PasswordConfirmationRequired). An empty/omitted
+ * appSecret leaves the stored secret untouched (SDD §4.3).
+ */
+export async function saveAdminConfig(config: Partial<AdminConfig> & { appSecret?: string }): Promise<AdminConfig> {
+	const { data } = await axios.put(apiUrl('/admin/config'), config)
+	return data.ocs.data
+}
+
+/** Exercises the given (possibly unsaved) values; nothing is persisted. */
+export async function testConnection(params: {
+	baseUrl?: string
+	appId?: string
+	appSecret?: string
+	verifyTls?: boolean
+}): Promise<ConnectionTestResult> {
+	const { data } = await axios.post(apiUrl('/admin/test-connection'), params)
+	return data.ocs.data
+}
+
+/** Group ids matching a search term, via the core provisioning API. */
+export async function searchGroups(search: string): Promise<string[]> {
+	const { data } = await axios.get(generateOcsUrl('cloud/groups'), {
+		params: { search, limit: 30 },
+	})
+	return data.ocs.data.groups ?? []
+}
+
 /** User-safe message from an OCS error response (SDD Appendix B). */
 export function ocsErrorMessage(error: unknown): string {
 	const data = (error as { response?: { data?: { ocs?: { data?: { message?: string } } } } })?.response?.data?.ocs?.data
