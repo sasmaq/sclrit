@@ -9,8 +9,8 @@ Protect files on demand with [Seclore](https://www.seclore.com) Enterprise Digit
 Feature-complete for the core protect/unprotect flow — **pending reconciliation of the Seclore API contract (SDD §15 Q1) and integration testing against a real Nextcloud 31 + Policy Server**.
 
 - [x] App skeleton (`appinfo/info.xml`, bootstrap, DI wiring)
-- [x] `ISecloreClient` adapter interface + HTTP implementation against the *indicative* API contract (SDD §7.3 — must be reconciled with your Policy Server's API guide, SDD §15 Q1)
-- [x] Token caching (`TokenStore`), policy caching (`PolicyService`), typed config (`ConfigService`)
+- [x] `ISecloreClient` adapter interface + HTTP implementation against the **verified Seclore DRM tenant API 1.0** (SDD §7.3.1; on-premises Policy Server deployments still need reconciling, SDD §15 Q1)
+- [x] Token caching (`TokenStore`), admin-maintained policy list (`PolicyService`, SDD §15 Q1a), typed config (`ConfigService`)
 - [x] Database schema (`oc_seclore_state`) + entity/mapper
 - [x] `occ files_seclore:test` connection check
 - [x] `ProtectionService` orchestration (SDD §4.1): ETag compare-and-swap, version purge, files-metadata projection, state machine
@@ -47,9 +47,11 @@ occ app:enable files_seclore
 Configure in the web UI under **Administration settings → Security → Seclore File Protection** (connection, default policy, group gates, thresholds, connection test), or via `occ`:
 
 ```sh
-occ config:app:set files_seclore base_url --value="https://policy.example.com/api"
-occ config:app:set files_seclore app_id --value="<app id>"
-occ config:app:set files_seclore app_secret --sensitive --value="<secret>"
+occ config:app:set files_seclore base_url --value="https://api.seclore.example.com"
+occ config:app:set files_seclore app_id --value="<tenant id>"
+occ config:app:set files_seclore app_secret --sensitive --value="<tenant secret>"
+# The Seclore API has no Hot Folder listing — configure the offered policies:
+occ config:app:set files_seclore policies --value='[{"id":"12345","name":"Confidential"}]'
 ```
 
 Then verify connectivity and credentials:

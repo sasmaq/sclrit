@@ -26,9 +26,9 @@
 						placeholder="https://policy.example.com/api"
 						type="url" />
 					<NcTextField v-model="form.appId"
-						:label="t('files_seclore', 'Application ID')" />
+						:label="t('files_seclore', 'Tenant ID')" />
 					<NcPasswordField v-model="appSecret"
-						:label="t('files_seclore', 'Application secret')"
+						:label="t('files_seclore', 'Tenant secret')"
 						:placeholder="appSecretSet ? t('files_seclore', '•••• (a secret is saved — leave empty to keep it)') : ''"
 						autocomplete="new-password" />
 					<NcCheckboxRadioSwitch :checked="form.verifyTls"
@@ -51,17 +51,42 @@
 				</div>
 			</NcSettingsSection>
 
+			<!-- Policies (SDD §15 Q1a: no listing API — admin-maintained) -->
+			<NcSettingsSection :name="t('files_seclore', 'Protection policies')"
+				:description="t('files_seclore', 'The Seclore API does not expose the Hot Folder list, so the policies offered to users are maintained here. Find the Hot Folder IDs in the Seclore admin console.')">
+				<div class="seclore-admin__form">
+					<div v-for="(policy, index) in form.policies" :key="index" class="seclore-admin__policy">
+						<NcTextField v-model="policy.id"
+							:label="t('files_seclore', 'Hot Folder ID')" />
+						<NcTextField v-model="policy.name"
+							:label="t('files_seclore', 'Display name')" />
+						<NcTextField v-model="policy.description"
+							:label="t('files_seclore', 'Description (optional, shown in the picker)')" />
+						<div>
+							<NcButton type="tertiary" @click="removePolicy(index)">
+								{{ t('files_seclore', 'Remove') }}
+							</NcButton>
+						</div>
+					</div>
+					<div class="seclore-admin__actions">
+						<NcButton @click="addPolicy">
+							{{ t('files_seclore', 'Add policy') }}
+						</NcButton>
+					</div>
+				</div>
+			</NcSettingsSection>
+
 			<!-- Defaults (SDD Appendix A, decision D7) -->
 			<NcSettingsSection :name="t('files_seclore', 'Protection defaults')"
-				:description="t('files_seclore', 'The default policy is pre-selected in the picker and used by API calls that do not name one. Policies are loaded from the saved connection settings.')">
+				:description="t('files_seclore', 'The default policy is pre-selected in the picker and used by API calls that do not name one.')">
 				<div class="seclore-admin__form">
 					<div class="seclore-admin__field">
 						<label for="seclore-default-policy">{{ t('files_seclore', 'Default policy') }}</label>
 						<NcSelect v-model="defaultPolicyModel"
 							input-id="seclore-default-policy"
-							:options="policies"
+							:options="form.policies"
 							label="name"
-							:placeholder="policies.length === 0 ? t('files_seclore', 'Save and test the connection to load policies') : t('files_seclore', 'No default')"
+							:placeholder="form.policies.length === 0 ? t('files_seclore', 'Add a protection policy above first') : t('files_seclore', 'No default')"
 							:clearable="true" />
 					</div>
 					<NcTextField v-model="form.syncMaxSizeMiB"
@@ -112,9 +137,6 @@
 					<NcTextField v-model="form.requestTimeoutMax"
 						:label="t('files_seclore', 'Maximum request timeout (seconds)')"
 						type="number" />
-					<NcTextField v-model="form.policyCacheTtl"
-						:label="t('files_seclore', 'Policy list cache (seconds)')"
-						type="number" />
 					<NcTextField v-model="form.staleAfter"
 						:label="t('files_seclore', 'Mark stuck operations as failed after (seconds)')"
 						type="number" />
@@ -148,7 +170,6 @@ import NcTextField from '@nextcloud/vue/dist/Components/NcTextField.js'
 import '@nextcloud/password-confirmation/style.css'
 import {
 	fetchAdminConfig,
-	fetchPolicies,
 	ocsErrorMessage,
 	saveAdminConfig,
 	searchGroups,
@@ -188,16 +209,15 @@ export default Vue.extend({
 				appId: '',
 				verifyTls: true,
 				defaultHotFolder: '',
+				policies: [] as Policy[],
 				allowedGroups: [] as string[],
 				unprotectGroups: [] as string[],
 				purgeVersions: true,
 				syncMaxSizeMiB: '25',
 				requestTimeoutMax: '600',
-				policyCacheTtl: '300',
 				staleAfter: '21600',
 			},
 			testResult: null as ConnectionTestResult | null,
-			policies: [] as Policy[],
 			groupOptions: [] as string[],
 		}
 	},
@@ -208,9 +228,9 @@ export default Vue.extend({
 				if (this.form.defaultHotFolder === '') {
 					return null
 				}
-				// Fall back to a synthetic entry so a saved id still shows while
-				// the policy list is unavailable.
-				return this.policies.find((p) => p.id === this.form.defaultHotFolder)
+				// Fall back to a synthetic entry so a saved id still shows when
+				// it is missing from the configured list.
+				return this.form.policies.find((p) => p.id === this.form.defaultHotFolder)
 					?? { id: this.form.defaultHotFolder, name: this.form.defaultHotFolder, description: '' }
 			},
 			set(policy: Policy | null) {
@@ -223,7 +243,7 @@ export default Vue.extend({
 				return ''
 			}
 			if (this.testResult.ok) {
-				return t('files_seclore', 'Connection OK — {count} policies available.', { count: String(this.testResult.policyCount ?? 0) })
+				return t('files_seclore', 'Connection and authentication OK.')
 			}
 			return this.testResult.error || t('files_seclore', 'Connection failed.')
 		},
@@ -238,8 +258,7 @@ export default Vue.extend({
 			this.loading = false
 			return
 		}
-		// Best-effort prefills; both fail quietly when not applicable.
-		this.loadPolicies()
+		// Best-effort prefill; fails quietly when not applicable.
 		try {
 			this.groupOptions = await searchGroups('')
 		} catch {
@@ -256,23 +275,22 @@ export default Vue.extend({
 			this.form.appId = config.appId
 			this.form.verifyTls = config.verifyTls
 			this.form.defaultHotFolder = config.defaultHotFolder
+			// Copy the rows: they are edited in place by the policy editor.
+			this.form.policies = config.policies.map((p) => ({ ...p }))
 			this.form.allowedGroups = config.allowedGroups
 			this.form.unprotectGroups = config.unprotectGroups
 			this.form.purgeVersions = config.purgeVersions
 			this.form.syncMaxSizeMiB = String(Math.round(config.syncMaxSize / MIB))
 			this.form.requestTimeoutMax = String(config.requestTimeoutMax)
-			this.form.policyCacheTtl = String(config.policyCacheTtl)
 			this.form.staleAfter = String(config.staleAfter)
 		},
 
-		async loadPolicies(): Promise<void> {
-			try {
-				this.policies = (await fetchPolicies(true)).policies
-			} catch {
-				// Not configured yet or the Policy Server is unreachable — the
-				// select shows its explanatory placeholder instead.
-				this.policies = []
-			}
+		addPolicy(): void {
+			this.form.policies.push({ id: '', name: '', description: '' })
+		},
+
+		removePolicy(index: number): void {
+			this.form.policies.splice(index, 1)
 		},
 
 		async test(): Promise<void> {
@@ -290,9 +308,6 @@ export default Vue.extend({
 			} finally {
 				this.testing = false
 			}
-			if (this.testResult?.ok) {
-				this.loadPolicies()
-			}
 		},
 
 		async save(): Promise<void> {
@@ -309,18 +324,19 @@ export default Vue.extend({
 					...(this.appSecret !== '' ? { appSecret: this.appSecret } : {}),
 					verifyTls: this.form.verifyTls,
 					defaultHotFolder: this.form.defaultHotFolder,
+					policies: this.form.policies
+						.map((p) => ({ id: p.id.trim(), name: p.name.trim(), description: (p.description ?? '').trim() }))
+						.filter((p) => p.id !== '' && p.name !== ''),
 					allowedGroups: this.form.allowedGroups,
 					unprotectGroups: this.form.unprotectGroups,
 					purgeVersions: this.form.purgeVersions,
 					syncMaxSize: Math.max(0, Math.round(parseFloat(this.form.syncMaxSizeMiB) || 0) * MIB),
 					requestTimeoutMax: parseInt(this.form.requestTimeoutMax, 10) || 600,
-					policyCacheTtl: parseInt(this.form.policyCacheTtl, 10) || 300,
 					staleAfter: parseInt(this.form.staleAfter, 10) || 21600,
 				})
 				this.applyConfig(config)
 				this.appSecret = ''
 				showSuccess(t('files_seclore', 'Seclore settings saved.'))
-				this.loadPolicies()
 			} catch (error) {
 				showError(ocsErrorMessage(error))
 			} finally {
@@ -355,6 +371,15 @@ export default Vue.extend({
 		display: block;
 		margin-block-end: 4px;
 		color: var(--color-text-maxcontrast);
+	}
+
+	&__policy {
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+		padding: 8px;
+		border: 1px solid var(--color-border);
+		border-radius: var(--border-radius-large);
 	}
 
 	&__actions {

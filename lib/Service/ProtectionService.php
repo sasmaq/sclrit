@@ -544,20 +544,17 @@ final class ProtectionService {
 		}
 	}
 
-	/** @throws PolicyNotFoundException|SecloreApiException */
+	/** @throws PolicyNotFoundException */
 	private function resolvePolicy(?string $hotFolderId): HotFolder {
 		$hotFolderId = $hotFolderId !== null && $hotFolderId !== '' ? $hotFolderId : $this->config->getDefaultHotFolder();
 		if ($hotFolderId === '') {
 			throw new PolicyNotFoundException('No policy given and no default policy is configured');
 		}
+		// The list is admin-maintained (SDD §15 Q1a); a policy deleted on the
+		// Seclore side surfaces later as a 404 from the protect call (E5).
 		$policy = $this->policyService->find($hotFolderId);
 		if ($policy === null) {
-			// E5: stale cache or a policy deleted in Seclore — refresh once.
-			$this->policyService->invalidate();
-			$policy = $this->policyService->find($hotFolderId);
-		}
-		if ($policy === null) {
-			throw new PolicyNotFoundException();
+			throw new PolicyNotFoundException('The policy is not in the configured policy list');
 		}
 		return $policy;
 	}

@@ -10,8 +10,8 @@ namespace OCA\FilesSeclore\Controller;
 
 use OCA\FilesSeclore\Service\ConfigService;
 use OCA\FilesSeclore\Service\Dto\Credentials;
+use OCA\FilesSeclore\Service\Dto\HotFolder;
 use OCA\FilesSeclore\Service\ISecloreClient;
-use OCA\FilesSeclore\Service\PolicyService;
 use OCA\FilesSeclore\Service\TokenStore;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\ApiRoute;
@@ -31,7 +31,6 @@ class AdminController extends OCSController {
 		IRequest $request,
 		private readonly ConfigService $config,
 		private readonly ISecloreClient $client,
-		private readonly PolicyService $policyService,
 		private readonly TokenStore $tokenStore,
 		private readonly IConfig $systemConfig,
 	) {
@@ -45,13 +44,16 @@ class AdminController extends OCSController {
 			'appId' => $this->config->getAppId(),
 			'appSecretSet' => $this->config->getAppSecret() !== '',
 			'defaultHotFolder' => $this->config->getDefaultHotFolder(),
+			'policies' => array_map(
+				static fn (HotFolder $f): array => ['id' => $f->id, 'name' => $f->name, 'description' => $f->description],
+				$this->config->getPolicies(),
+			),
 			'allowedGroups' => $this->config->getAllowedGroups(),
 			'unprotectGroups' => $this->config->getUnprotectGroups(),
 			'syncMaxSize' => $this->config->getSyncMaxSize(),
 			'requestTimeoutMax' => $this->config->getRequestTimeoutMax(),
 			'verifyTls' => $this->config->getVerifyTls(),
 			'purgeVersions' => $this->config->getPurgeVersions(),
-			'policyCacheTtl' => $this->config->getPolicyCacheTtl(),
 			'staleAfter' => $this->config->getStaleAfter(),
 		]);
 	}
@@ -60,6 +62,7 @@ class AdminController extends OCSController {
 	 * Partial update: only supplied fields are written. The secret is only
 	 * overwritten when a non-empty value is supplied (SDD §4.3).
 	 *
+	 * @param array<int, array{id: string, name: string, description?: string}>|null $policies
 	 * @param string[]|null $allowedGroups
 	 * @param string[]|null $unprotectGroups
 	 */
@@ -70,13 +73,13 @@ class AdminController extends OCSController {
 		?string $appId = null,
 		?string $appSecret = null,
 		?string $defaultHotFolder = null,
+		?array $policies = null,
 		?array $allowedGroups = null,
 		?array $unprotectGroups = null,
 		?int $syncMaxSize = null,
 		?int $requestTimeoutMax = null,
 		?bool $verifyTls = null,
 		?bool $purgeVersions = null,
-		?int $policyCacheTtl = null,
 		?int $staleAfter = null,
 	): DataResponse {
 		if ($baseUrl !== null) {
@@ -100,6 +103,9 @@ class AdminController extends OCSController {
 		if ($defaultHotFolder !== null) {
 			$this->config->setDefaultHotFolder($defaultHotFolder);
 		}
+		if ($policies !== null) {
+			$this->config->setPolicies(array_filter($policies, is_array(...)));
+		}
 		if ($allowedGroups !== null) {
 			$this->config->setAllowedGroups($allowedGroups);
 		}
@@ -118,15 +124,11 @@ class AdminController extends OCSController {
 		if ($purgeVersions !== null) {
 			$this->config->setPurgeVersions($purgeVersions);
 		}
-		if ($policyCacheTtl !== null) {
-			$this->config->setPolicyCacheTtl(max(0, $policyCacheTtl));
-		}
 		if ($staleAfter !== null) {
 			$this->config->setStaleAfter(max(60, $staleAfter));
 		}
 
-		// Connection-relevant settings may have changed: drop cached state.
-		$this->policyService->invalidate();
+		// Connection settings may have changed: drop the cached session token.
 		if ($this->config->isConfigured()) {
 			$this->tokenStore->invalidate($this->config->getCredentials());
 		}
@@ -158,11 +160,6 @@ class AdminController extends OCSController {
 		}
 
 		$result = $this->client->testConnection($override);
-		if ($result->ok && $override === null) {
-			// A successful test against the stored settings is a good moment to
-			// refresh the policy cache (SDD §10).
-			$this->policyService->invalidate();
-		}
 		return new DataResponse([
 			'ok' => $result->ok,
 			'policyCount' => $result->policyCount,

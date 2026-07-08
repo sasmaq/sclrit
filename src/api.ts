@@ -73,13 +73,14 @@ export interface AdminConfig {
 	appId: string
 	appSecretSet: boolean
 	defaultHotFolder: string
+	// Admin-maintained: the Seclore API has no Hot Folder listing (SDD §15 Q1a).
+	policies: Policy[]
 	allowedGroups: string[]
 	unprotectGroups: string[]
 	syncMaxSize: number
 	requestTimeoutMax: number
 	verifyTls: boolean
 	purgeVersions: boolean
-	policyCacheTtl: number
 	staleAfter: number
 }
 

@@ -103,15 +103,11 @@ class ApiController extends OCSController {
 	#[NoAdminRequired]
 	#[ApiRoute(verb: 'GET', url: '/api/v1/policies')]
 	public function policies(): DataResponse {
-		try {
-			$policies = $this->policyService->getPolicies();
-		} catch (\Throwable $e) {
-			return $this->errorResponse($e);
-		}
+		// Served from local configuration (SDD §15 Q1a) — no upstream call.
 		return new DataResponse([
 			'policies' => array_map(
 				static fn (HotFolder $f): array => ['id' => $f->id, 'name' => $f->name, 'description' => $f->description],
-				$policies,
+				$this->policyService->getPolicies(),
 			),
 			'defaultId' => $this->config->getDefaultHotFolder(),
 		]);

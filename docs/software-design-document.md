@@ -506,6 +506,35 @@ If the deployed Policy Server version uses HMAC request signing instead of beare
 | Unprotect | `POST {base}/files/unprotect` — multipart: `file` → original bytes | `unprotect()` |
 | File info | `POST {base}/files/info` — first N KiB or full file → `{protected, fileId?, hotFolderId?}` | `getFileInfo()` |
 
+### 7.3.1 Verified contract — Seclore DRM tenant API 1.0 (public sources, 2026-07-09)
+
+The endpoints below were extracted from Seclore Professional Services' own public
+[n8n integration node](https://repo.seclore.com/public/n8n-nodes-seclore)
+(mirrored at [github.com/seclore-tech/n8n-nodes-seclore](https://github.com/seclore-tech/n8n-nodes-seclore),
+v1.0.3, 2025-11). They describe the **Seclore cloud DRM tenant API**; an on-premises
+Policy Server deployment must still be checked against this table (Q1).
+
+| Operation | Verified call |
+| --- | --- |
+| Authenticate | `POST {base}/seclore/drm/1.0/auth/login` `{tenantId, tenantSecret}` → `{accessToken, refreshToken}` (no `expiresIn`) |
+| Refresh token | `POST {base}/seclore/drm/1.0/auth/refresh` `{refreshToken}` (Bearer) → new token pair |
+| Upload | `POST {base}/seclore/drm/filestorage/1.0/upload` — multipart field `file` → `{fileStorageId}` |
+| Protect (Hot Folder) | `POST {base}/seclore/drm/1.0/protect/hf` `{hotfolderId, fileStorageId}` → `{fileStorageId (new), secloreFileId}` |
+| Protect (external ref) | `POST {base}/seclore/drm/1.0/protect/externalref` `{hotfolderExternalReference, fileExternalReference?, fileStorageId}` |
+| Protect (like existing file) | `POST {base}/seclore/drm/1.0/protect/fileid` `{existingProtectedFileId, fileStorageId}` |
+| Unprotect | `POST {base}/seclore/drm/1.0/unprotect` `{fileStorageId}` → `{fileStorageId (new)}` |
+| Download | `GET {base}/seclore/drm/filestorage/1.0/download/{fileStorageId}` → bytes (filename via response headers) |
+| Delete stored file | `DELETE {base}/seclore/drm/filestorage/1.0/{fileStorageId}` |
+
+Consequences for the adapter (all confined to `SecloreClient`/`TokenStore`, decision D3):
+
+1. **Protect/unprotect are multi-step**, not one multipart round-trip: upload → operate → download, with `DELETE` cleanup of the uploaded temporary in a `finally`.
+2. **Auth**: bearer `accessToken` plus a `refreshToken`; no expiry in the response, so the token cache needs a conservative TTL and the existing 401 refresh-and-replay path (re-login is a valid fallback for refresh).
+3. **Correlation header** is `X-SECLORE-CORRELATION-ID` (not `X-Request-Id`).
+4. **No Hot Folder listing endpoint** appears in this API — see Q1a below; the policy picker may need an admin-maintained policy list instead.
+5. **No on-behalf-of user field** in any protect request (settles Q2 for this API) and **no file-info/probe endpoint** (settles Q6 negatively for this API).
+6. Credentials terminology is `tenantId`/`tenantSecret` (our `app_id`/`app_secret` map 1:1).
+
 ### 7.4 Error mapping and resilience
 
 | Seclore response | Mapped exception | User-facing behavior |
@@ -674,12 +703,13 @@ Items to resolve with the customer's Seclore deployment **before implementation 
 
 | # | Question | Impacts |
 | --- | --- | --- |
-| Q1 | Exact Policy Server product/version and its REST API guide (endpoint paths, auth scheme: bearer vs HMAC, payload shapes). | §7.3 adapter implementation; CI stub fixtures. |
-| Q2 | Does the protect API support **on-behalf-of** ownership (acting user's email), or are all files owned by the service account / Hot Folder owner? | §7.1 signature, audit semantics, A4. |
-| Q3 | Output naming: does protection preserve the native extension for all formats, or produce wrappers (e.g. `.html` Seclore Lite) for some types? | D1 in-place replacement; UX copy; possibly a rename step. |
+| Q1 | Exact Policy Server product/version and its REST API guide (endpoint paths, auth scheme: bearer vs HMAC, payload shapes). *Partially answered 2026-07-09: the cloud DRM tenant API 1.0 contract is documented in §7.3.1 (bearer + refresh token, upload/protect/download flow). Remaining: confirm the customer's deployment matches it (cloud vs on-prem version).* | §7.3 adapter implementation; CI stub fixtures. |
+| Q1a | Is there an API to **list Hot Folders** for the tenant? None exists in the DRM tenant API 1.0 (§7.3.1) — Seclore's own n8n node requires the Hot Folder id to be pasted in. *Resolved in the implementation 2026-07-09: `listHotFolders()` was removed from the adapter; the policy list is admin-maintained (`policies` config key, editable in the admin settings) and served locally by `PolicyService`. Revisit if a listing API turns up.* | `PolicyService`, policy picker (§5.2), admin settings default-policy dropdown. |
+| Q2 | Does the protect API support **on-behalf-of** ownership (acting user's email), or are all files owned by the service account / Hot Folder owner? *Finding 2026-07-09: no such field exists in any protect request of the DRM tenant API 1.0 — ownership follows the Hot Folder; `ownerEmail` will be dropped from the adapter call unless the deployment offers an extension.* | §7.1 signature, audit semantics, A4. |
+| Q3 | Output naming: does protection preserve the native extension for all formats, or produce wrappers (e.g. `.html` Seclore Lite) for some types? *Note: the download endpoint returns the protected file's name via response headers — the adapter should surface it so a rename step can be decided.* | D1 in-place replacement; UX copy; possibly a rename step. |
 | Q4 | Server-side max file size / timeout on the protect endpoint. | `sync_max_size`, E-case messaging, Appendix A defaults. |
 | Q5 | Is unprotect permitted for this tenant at all (some deployments disable it)? | Whether the unprotect surface ships enabled. |
-| Q6 | Is there a probe API to identify protected files cheaply (magic bytes or info endpoint)? | E4 reconciliation feature. |
+| Q6 | Is there a probe API to identify protected files cheaply (magic bytes or info endpoint)? *Finding 2026-07-09: no info/probe endpoint exists in the DRM tenant API 1.0; E4 reconciliation stays unavailable unless another API surface provides it.* | E4 reconciliation feature. |
 | Q7 | Seclore cloud vs on-prem: data-residency statement required in the app description? | §8.4 documentation. |
 
 ---
@@ -700,7 +730,7 @@ All under app `files_seclore` via `IAppConfig`.
 | `request_timeout_max` | int (s) | `600` | no | Upper cap for scaled request timeouts. |
 | `verify_tls` | bool | `true` | no | TLS certificate verification. |
 | `purge_versions` | bool | `true` | no | Delete pre-protection file versions after success (D7). |
-| `policy_cache_ttl` | int (s) | `300` | no | Hot Folder list cache TTL. |
+| `policies` | json list | `[]` | no | Admin-maintained policy list `[{id, name, description}]` — the verified API has no Hot Folder listing (§7.3.1, Q1a). Replaces the former `policy_cache_ttl` cache setting. |
 | `stale_after` | int (s) | `21600` | no | Watchdog window for stuck states (E14). |
 
 ## Appendix B — API error codes (OCS)

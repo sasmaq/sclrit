@@ -17,7 +17,6 @@ use OCA\FilesSeclore\Exceptions\SecloreProtocolException;
 use OCA\FilesSeclore\Exceptions\SecloreUnavailableException;
 use OCA\FilesSeclore\Service\Dto\ConnectionResult;
 use OCA\FilesSeclore\Service\Dto\Credentials;
-use OCA\FilesSeclore\Service\Dto\HotFolder;
 use OCA\FilesSeclore\Service\Dto\ProtectResult;
 use OCA\FilesSeclore\Service\Dto\SecloreFileInfo;
 use OCA\FilesSeclore\Service\Dto\Token;
@@ -27,25 +26,40 @@ use OCP\ITempManager;
 use Psr\Log\LoggerInterface;
 
 /**
- * HTTP implementation of the Seclore Policy Server adapter (SDD §7).
+ * HTTP implementation of the Seclore adapter against the **verified** Seclore
+ * DRM tenant API 1.0 (SDD §7.3.1, confirmed 2026-07-09 from Seclore's public
+ * n8n integration node). File operations are multi-step:
  *
- * ⚠ The endpoint paths and payload shapes below follow the *indicative*
- * contract from SDD §7.3. Before production use they must be reconciled with
- * the API guide of the deployed Policy Server version (SDD §15, Q1). Every
- * such spot is marked with `TODO(Q1)` / `TODO(Q2)` / `TODO(Q6)`.
+ *   protect:   upload → POST protect/hf → download protected → cleanup
+ *   unprotect: upload → POST unprotect  → download original  → cleanup
+ *
+ * Each HTTP step gets its own token refresh-and-replay (SDD §7.2), so a token
+ * expiring mid-sequence never replays a side-effecting step. On-premises
+ * Policy Server deployments must still be reconciled with this contract
+ * (SDD §15 Q1).
  */
 final class SecloreClient implements ISecloreClient {
-	// TODO(Q1): confirm endpoint paths against the deployed Policy Server API guide.
-	private const EP_TOKEN = '/auth/token';
-	private const EP_HOT_FOLDERS = '/hotfolders';
-	private const EP_PROTECT = '/files/protect';
-	private const EP_UNPROTECT = '/files/unprotect';
-	private const EP_FILE_INFO = '/files/info';
+	// Verified endpoints (SDD §7.3.1).
+	private const EP_LOGIN = '/seclore/drm/1.0/auth/login';
+	private const EP_PROTECT_HF = '/seclore/drm/1.0/protect/hf';
+	private const EP_UNPROTECT = '/seclore/drm/1.0/unprotect';
+	private const EP_STORAGE_UPLOAD = '/seclore/drm/filestorage/1.0/upload';
+	private const EP_STORAGE_DOWNLOAD = '/seclore/drm/filestorage/1.0/download/';
+	private const EP_STORAGE_DELETE = '/seclore/drm/filestorage/1.0/';
+
+	private const HEADER_CORRELATION = 'X-SECLORE-CORRELATION-ID';
+
+	/**
+	 * The login response carries no expiry (SDD §7.3.1) — assume a short
+	 * lifetime; a rejected token is refreshed and replayed once anyway. The
+	 * refresh-token endpoint is intentionally unused: re-login is equivalent
+	 * and keeps the token cache single-valued.
+	 */
+	private const ASSUMED_TOKEN_TTL_S = 600;
 
 	private const CONNECT_TIMEOUT_S = 10;
 	private const DEFAULT_TIMEOUT_S = 120;
 	private const AUTH_TIMEOUT_S = 30;
-	private const INFO_PROBE_BYTES = 65536;
 	private const ERROR_DETAIL_MAX = 2048;
 
 	public function __construct(
@@ -60,118 +74,143 @@ final class SecloreClient implements ISecloreClient {
 	public function testConnection(?Credentials $override = null): ConnectionResult {
 		$credentials = $override ?? ($this->config->isConfigured() ? $this->config->getCredentials() : null);
 		if ($credentials === null) {
-			return new ConnectionResult(false, null, 'Not configured: base URL, app ID and secret are required');
+			return new ConnectionResult(false, null, 'Not configured: base URL, tenant ID and secret are required');
 		}
 
 		try {
-			$token = $this->authenticate($credentials);
-			$folders = $this->fetchHotFolders($credentials, $token->value);
-			return new ConnectionResult(true, count($folders));
+			$this->authenticate($credentials);
+			// The API has no policy-listing endpoint (SDD §15 Q1a), so there is
+			// no policy count to report.
+			return new ConnectionResult(true);
 		} catch (SecloreApiException $e) {
 			return new ConnectionResult(false, null, $e->getMessage());
 		}
 	}
 
-	public function listHotFolders(): array {
-		$credentials = $this->requireConfigured();
-		return $this->withToken(
-			$credentials,
-			fn (string $token): array => $this->fetchHotFolders($credentials, $token),
-		);
-	}
-
 	public function protect($in, string $fileName, string $hotFolderId, ?string $ownerEmail = null): ProtectResult {
+		// $ownerEmail is accepted for interface stability but unused: the DRM
+		// tenant API has no on-behalf-of field — ownership follows the Hot
+		// Folder (SDD §15 Q2).
 		$credentials = $this->requireConfigured();
-		$requestId = $this->newRequestId();
+		$correlationId = $this->newCorrelationId();
 		$sizeBytes = $this->streamSize($in);
-		$sink = $this->newTempFile();
-
-		$operation = function (string $token) use ($credentials, $in, $fileName, $hotFolderId, $ownerEmail, $sink, $sizeBytes, $requestId): IResponse {
-			// The stream may already be consumed when this closure is replayed
-			// after a token refresh (SDD §7.2).
-			$this->rewindIfNeeded($in);
-
-			// TODO(Q1): confirm part names and whether the policy is passed as a
-			// form field, query parameter or JSON side-channel.
-			$multipart = [
-				['name' => 'file', 'contents' => $in, 'filename' => $fileName],
-				['name' => 'hotFolderId', 'contents' => $hotFolderId],
-			];
-			if ($ownerEmail !== null) {
-				// TODO(Q2): on-behalf-of ownership attribution support.
-				$multipart[] = ['name' => 'ownerEmail', 'contents' => $ownerEmail];
-			}
-
-			$response = $this->request($credentials, 'POST', self::EP_PROTECT, [
-				'multipart' => $multipart,
-				'sink' => $sink,
-				'timeout' => $this->scaledTimeout($sizeBytes),
-			], $token, $requestId);
-			$this->assertOk($response, 'protect', $sink);
-			return $response;
-		};
-
 		$started = microtime(true);
+
+		$uploadId = $this->uploadStream($credentials, $in, $fileName, $sizeBytes, $correlationId);
 		try {
-			$response = $this->withToken($credentials, $operation);
-
-			// TODO(Q1): confirm how the Seclore file id is returned (response
-			// header assumed; may be a JSON envelope instead).
-			$secloreFileId = trim($response->getHeader('X-Seclore-File-Id'));
-			if ($secloreFileId === '') {
-				throw new SecloreProtocolException('Protect succeeded but no Seclore file id was returned — confirm the API contract (SDD §15, Q1)');
-			}
-
-			clearstatcache(true, $sink);
-			$protectedBytes = (int)(filesize($sink) ?: 0);
-			if ($protectedBytes === 0) {
-				throw new SecloreProtocolException('Protect returned an empty body');
-			}
-
-			$this->logger->info('Seclore protect succeeded', [
-				'requestId' => $requestId,
-				'inBytes' => $sizeBytes,
-				'outBytes' => $protectedBytes,
-				'durationMs' => (int)((microtime(true) - $started) * 1000),
-			]);
-
-			return new ProtectResult($secloreFileId, $sink, $protectedBytes, $requestId);
-		} catch (\Throwable $e) {
-			@unlink($sink);
-			throw $e;
+			$data = $this->postJson($credentials, self::EP_PROTECT_HF, [
+				'hotfolderId' => $hotFolderId,
+				'fileStorageId' => $uploadId,
+			], 'protect', $correlationId, $this->scaledTimeout($sizeBytes));
+		} finally {
+			$this->deleteStored($credentials, $uploadId, $correlationId);
 		}
+
+		$protectedStorageId = $data['fileStorageId'] ?? null;
+		$secloreFileId = $data['secloreFileId'] ?? null;
+		if (!is_string($protectedStorageId) || $protectedStorageId === ''
+			|| !is_string($secloreFileId) || $secloreFileId === '') {
+			throw new SecloreProtocolException('Unexpected protect response shape — confirm the API contract (SDD §7.3.1)');
+		}
+
+		$sink = $this->downloadToTemp($credentials, $protectedStorageId, $sizeBytes, $correlationId, 'protect download');
+		$this->deleteStored($credentials, $protectedStorageId, $correlationId);
+
+		clearstatcache(true, $sink);
+		$protectedBytes = (int)(filesize($sink) ?: 0);
+
+		$this->logger->info('Seclore protect succeeded', [
+			'requestId' => $correlationId,
+			'inBytes' => $sizeBytes,
+			'outBytes' => $protectedBytes,
+			'durationMs' => (int)((microtime(true) - $started) * 1000),
+		]);
+
+		return new ProtectResult($secloreFileId, $sink, $protectedBytes, $correlationId);
 	}
 
 	public function unprotect($in, string $fileName): string {
 		$credentials = $this->requireConfigured();
-		$requestId = $this->newRequestId();
+		$correlationId = $this->newCorrelationId();
 		$sizeBytes = $this->streamSize($in);
-		$sink = $this->newTempFile();
 
-		$operation = function (string $token) use ($credentials, $in, $fileName, $sink, $sizeBytes, $requestId): IResponse {
-			$this->rewindIfNeeded($in);
-			$response = $this->request($credentials, 'POST', self::EP_UNPROTECT, [
-				'multipart' => [['name' => 'file', 'contents' => $in, 'filename' => $fileName]],
-				'sink' => $sink,
-				'timeout' => $this->scaledTimeout($sizeBytes),
-			], $token, $requestId);
-			$this->assertOk($response, 'unprotect', $sink);
-			return $response;
-		};
-
+		$uploadId = $this->uploadStream($credentials, $in, $fileName, $sizeBytes, $correlationId);
 		try {
-			$this->withToken($credentials, $operation);
+			$data = $this->postJson($credentials, self::EP_UNPROTECT, [
+				'fileStorageId' => $uploadId,
+			], 'unprotect', $correlationId, $this->scaledTimeout($sizeBytes));
+		} finally {
+			$this->deleteStored($credentials, $uploadId, $correlationId);
+		}
+
+		$unprotectedStorageId = $data['fileStorageId'] ?? null;
+		if (!is_string($unprotectedStorageId) || $unprotectedStorageId === '') {
+			throw new SecloreProtocolException('Unexpected unprotect response shape — confirm the API contract (SDD §7.3.1)');
+		}
+
+		$sink = $this->downloadToTemp($credentials, $unprotectedStorageId, $sizeBytes, $correlationId, 'unprotect download');
+		$this->deleteStored($credentials, $unprotectedStorageId, $correlationId);
+
+		$this->logger->info('Seclore unprotect succeeded', [
+			'requestId' => $correlationId,
+			'inBytes' => $sizeBytes,
+		]);
+
+		return $sink;
+	}
+
+	public function getFileInfo($in): ?SecloreFileInfo {
+		// The DRM tenant API 1.0 has no info/probe endpoint (SDD §15 Q6);
+		// the probe is inconclusive by contract.
+		$this->requireConfigured();
+		return null;
+	}
+
+	/**
+	 * Upload a stream to the file storage, returning its fileStorageId.
+	 *
+	 * @param resource $in
+	 */
+	private function uploadStream(Credentials $credentials, $in, string $fileName, ?int $sizeBytes, string $correlationId): string {
+		$response = $this->withToken($credentials, function (string $token) use ($credentials, $in, $fileName, $sizeBytes, $correlationId): IResponse {
+			// The stream may already be consumed when this closure is replayed
+			// after a token refresh (SDD §7.2).
+			$this->rewindIfNeeded($in);
+			$response = $this->request($credentials, 'POST', self::EP_STORAGE_UPLOAD, [
+				'multipart' => [['name' => 'file', 'contents' => $in, 'filename' => $fileName]],
+				'timeout' => $this->scaledTimeout($sizeBytes),
+			], $token, $correlationId);
+			$this->assertOk($response, 'upload');
+			return $response;
+		});
+
+		$data = json_decode((string)$response->getBody(), true);
+		$fileStorageId = is_array($data) ? ($data['fileStorageId'] ?? null) : null;
+		if (!is_string($fileStorageId) || $fileStorageId === '') {
+			throw new SecloreProtocolException('Unexpected upload response shape — confirm the API contract (SDD §7.3.1)');
+		}
+		return $fileStorageId;
+	}
+
+	/**
+	 * Stream a stored file into a temp file owned by the caller.
+	 */
+	private function downloadToTemp(Credentials $credentials, string $fileStorageId, ?int $sizeBytes, string $correlationId, string $operation): string {
+		$sink = $this->newTempFile();
+		try {
+			$this->withToken($credentials, function (string $token) use ($credentials, $fileStorageId, $sizeBytes, $correlationId, $sink, $operation): IResponse {
+				$response = $this->request($credentials, 'GET', self::EP_STORAGE_DOWNLOAD . rawurlencode($fileStorageId), [
+					'sink' => $sink,
+					'timeout' => $this->scaledTimeout($sizeBytes),
+				], $token, $correlationId);
+				$this->assertOk($response, $operation, $sink);
+				return $response;
+			});
 
 			clearstatcache(true, $sink);
 			if ((int)(filesize($sink) ?: 0) === 0) {
-				throw new SecloreProtocolException('Unprotect returned an empty body');
+				throw new SecloreProtocolException(ucfirst($operation) . ' returned an empty body');
 			}
-
-			$this->logger->info('Seclore unprotect succeeded', [
-				'requestId' => $requestId,
-				'inBytes' => $sizeBytes,
-			]);
-
 			return $sink;
 		} catch (\Throwable $e) {
 			@unlink($sink);
@@ -179,43 +218,45 @@ final class SecloreClient implements ISecloreClient {
 		}
 	}
 
-	public function getFileInfo($in): ?SecloreFileInfo {
-		$credentials = $this->requireConfigured();
-
-		// TODO(Q6): confirm whether an info/probe endpoint exists and how much
-		// of the file it needs. A leading chunk is assumed sufficient here.
-		$head = fread($in, self::INFO_PROBE_BYTES);
-		if ($head === false || $head === '') {
-			return null;
-		}
-
+	/**
+	 * Best-effort cleanup of a staged file on the server; the server also
+	 * auto-expires them, so failures are only logged.
+	 */
+	private function deleteStored(Credentials $credentials, string $fileStorageId, string $correlationId): void {
 		try {
-			$response = $this->withToken($credentials, function (string $token) use ($credentials, $head): IResponse {
-				return $this->request($credentials, 'POST', self::EP_FILE_INFO, [
-					'multipart' => [['name' => 'file', 'contents' => $head, 'filename' => 'probe.bin']],
+			$this->withToken($credentials, function (string $token) use ($credentials, $fileStorageId, $correlationId): IResponse {
+				return $this->request($credentials, 'DELETE', self::EP_STORAGE_DELETE . rawurlencode($fileStorageId), [
 					'timeout' => self::AUTH_TIMEOUT_S,
-				], $token, $this->newRequestId());
+				], $token, $correlationId);
 			});
-		} catch (SecloreApiException $e) {
-			// The probe is best-effort by contract: inconclusive, never fatal.
-			$this->logger->debug('Seclore file-info probe failed: ' . $e->getMessage());
-			return null;
+		} catch (\Throwable $e) {
+			$this->logger->debug('Seclore file-storage cleanup failed (ignored): ' . $e->getMessage(), [
+				'requestId' => $correlationId,
+			]);
 		}
+	}
 
-		if ($response->getStatusCode() !== 200) {
-			return null;
-		}
+	/**
+	 * POST a JSON body and return the decoded JSON response.
+	 *
+	 * @param array<string, string> $body
+	 * @return array<string, mixed>
+	 */
+	private function postJson(Credentials $credentials, string $path, array $body, string $operation, string $correlationId, int $timeout): array {
+		$response = $this->withToken($credentials, function (string $token) use ($credentials, $path, $body, $operation, $correlationId, $timeout): IResponse {
+			$response = $this->request($credentials, 'POST', $path, [
+				'json' => $body,
+				'timeout' => $timeout,
+			], $token, $correlationId);
+			$this->assertOk($response, $operation);
+			return $response;
+		});
 
 		$data = json_decode((string)$response->getBody(), true);
-		if (!is_array($data) || !array_key_exists('protected', $data)) {
-			return null;
+		if (!is_array($data)) {
+			throw new SecloreProtocolException("Unexpected $operation response shape — confirm the API contract (SDD §7.3.1)");
 		}
-
-		return new SecloreFileInfo(
-			(bool)$data['protected'],
-			isset($data['fileId']) ? (string)$data['fileId'] : null,
-			isset($data['hotFolderId']) ? (string)$data['hotFolderId'] : null,
-		);
+		return $data;
 	}
 
 	/**
@@ -240,13 +281,10 @@ final class SecloreClient implements ISecloreClient {
 	}
 
 	private function authenticate(Credentials $credentials): Token {
-		// TODO(Q1): confirm the authentication scheme. A bearer session token is
-		// assumed; some Policy Server versions use HMAC request signing instead
-		// (SDD §7.2) — that variant would also be absorbed inside this class.
-		$response = $this->request($credentials, 'POST', self::EP_TOKEN, [
-			'json' => ['appId' => $credentials->appId, 'secret' => $credentials->appSecret],
+		$response = $this->request($credentials, 'POST', self::EP_LOGIN, [
+			'json' => ['tenantId' => $credentials->appId, 'tenantSecret' => $credentials->appSecret],
 			'timeout' => self::AUTH_TIMEOUT_S,
-		], null, $this->newRequestId());
+		], null, $this->newCorrelationId());
 
 		$status = $response->getStatusCode();
 		if ($status === 401 || $status === 403) {
@@ -257,50 +295,25 @@ final class SecloreClient implements ISecloreClient {
 		}
 
 		$data = json_decode((string)$response->getBody(), true);
-		if (!is_array($data) || !is_string($data['token'] ?? null) || $data['token'] === '') {
-			throw new SecloreProtocolException('Unexpected token response shape — confirm the API contract (SDD §15, Q1)');
+		if (!is_array($data) || !is_string($data['accessToken'] ?? null) || $data['accessToken'] === '') {
+			throw new SecloreProtocolException('Unexpected login response shape — confirm the API contract (SDD §7.3.1)');
 		}
 
-		return new Token($data['token'], max(60, (int)($data['expiresIn'] ?? 300)));
-	}
-
-	/** @return HotFolder[] */
-	private function fetchHotFolders(Credentials $credentials, string $token): array {
-		$response = $this->request($credentials, 'GET', self::EP_HOT_FOLDERS, [], $token, $this->newRequestId());
-		$this->assertOk($response, 'list policies');
-
-		$data = json_decode((string)$response->getBody(), true);
-		// TODO(Q1): confirm the collection shape (bare array vs {hotFolders: [...]}).
-		$items = is_array($data) ? ($data['hotFolders'] ?? $data) : null;
-		if (!is_array($items)) {
-			throw new SecloreProtocolException('Unexpected policy list response shape — confirm the API contract (SDD §15, Q1)');
-		}
-
-		$folders = [];
-		foreach ($items as $item) {
-			if (is_array($item) && isset($item['id'], $item['name'])) {
-				$folders[] = new HotFolder(
-					(string)$item['id'],
-					(string)$item['name'],
-					(string)($item['description'] ?? ''),
-				);
-			}
-		}
-		return $folders;
+		return new Token($data['accessToken'], self::ASSUMED_TOKEN_TTL_S);
 	}
 
 	/**
 	 * @param array<string, mixed> $options
 	 */
-	private function request(Credentials $credentials, string $method, string $path, array $options, ?string $token, string $requestId): IResponse {
-		if ($method !== 'GET' && $method !== 'POST') {
+	private function request(Credentials $credentials, string $method, string $path, array $options, ?string $token, string $correlationId): IResponse {
+		if (!in_array($method, ['GET', 'POST', 'DELETE'], true)) {
 			throw new \InvalidArgumentException('Unsupported HTTP method: ' . $method);
 		}
 
 		$url = $credentials->baseUrl . $path;
 
 		$headers = $options['headers'] ?? [];
-		$headers['X-Request-Id'] = $requestId;
+		$headers[self::HEADER_CORRELATION] = $correlationId;
 		$headers['Accept'] = 'application/json, application/octet-stream';
 		if ($token !== null) {
 			$headers['Authorization'] = 'Bearer ' . $token;
@@ -317,11 +330,13 @@ final class SecloreClient implements ISecloreClient {
 
 		try {
 			$client = $this->clientService->newClient();
-			return $method === 'GET'
-				? $client->get($url, $options)
-				: $client->post($url, $options);
+			return match ($method) {
+				'GET' => $client->get($url, $options),
+				'POST' => $client->post($url, $options),
+				'DELETE' => $client->delete($url, $options),
+			};
 		} catch (\Exception $e) {
-			throw new SecloreUnavailableException('Seclore Policy Server unreachable: ' . $e->getMessage(), $e);
+			throw new SecloreUnavailableException('Seclore server unreachable: ' . $e->getMessage(), $e);
 		}
 	}
 
@@ -341,8 +356,9 @@ final class SecloreClient implements ISecloreClient {
 		$suffix = $detail !== '' ? (': ' . $detail) : '';
 		return match (true) {
 			$status === 401, $status === 403 => new SecloreAuthException("Seclore rejected the $operation request (HTTP $status)$suffix"),
-			$status === 404 => new PolicyNotFoundException("Seclore endpoint or policy not found (HTTP 404, $operation)$suffix"),
-			$status === 413 => new FileTooLargeException("The Policy Server rejected the file as too large (HTTP 413)$suffix"),
+			$status === 404 && $operation === 'protect' => new PolicyNotFoundException("Seclore does not know the requested Hot Folder (HTTP 404)$suffix"),
+			$status === 404 => new SecloreProtocolException("Seclore endpoint or resource not found (HTTP 404, $operation)$suffix"),
+			$status === 413 => new FileTooLargeException("The Seclore server rejected the file as too large (HTTP 413)$suffix"),
 			$status >= 500 => new SecloreApiException("Seclore server error (HTTP $status, $operation)$suffix", true),
 			default => new SecloreProtocolException("Unexpected Seclore response (HTTP $status, $operation)$suffix"),
 		};
@@ -400,7 +416,7 @@ final class SecloreClient implements ISecloreClient {
 		return $path;
 	}
 
-	private function newRequestId(): string {
+	private function newCorrelationId(): string {
 		return bin2hex(random_bytes(16));
 	}
 }

@@ -43,13 +43,14 @@ class TestConnection extends Command {
 
 		$result = $this->client->testConnection();
 		if ($result->ok) {
-			$count = $result->policyCount ?? 0;
-			$output->writeln(sprintf(
-				'<info>OK</info> — authenticated against %s, %d protection %s available.',
-				$this->config->getBaseUrl(),
-				$count,
-				$count === 1 ? 'policy' : 'policies',
-			));
+			$output->writeln(sprintf('<info>OK</info> — authenticated against %s.', $this->config->getBaseUrl()));
+			$policyCount = count($this->config->getPolicies());
+			if ($policyCount === 0) {
+				// The API has no policy-listing endpoint (SDD §15 Q1a).
+				$output->writeln('<comment>No protection policies configured yet — add Hot Folder ids in the admin settings.</comment>');
+			} else {
+				$output->writeln(sprintf('%d protection %s configured.', $policyCount, $policyCount === 1 ? 'policy' : 'policies'));
+			}
 			return 0;
 		}
 

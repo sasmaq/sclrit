@@ -10,6 +10,7 @@ namespace OCA\FilesSeclore\Service;
 
 use OCA\FilesSeclore\AppInfo\Application;
 use OCA\FilesSeclore\Service\Dto\Credentials;
+use OCA\FilesSeclore\Service\Dto\HotFolder;
 use OCP\IAppConfig;
 
 /**
@@ -23,18 +24,17 @@ final class ConfigService {
 	public const KEY_APP_ID = 'app_id';
 	public const KEY_APP_SECRET = 'app_secret';
 	public const KEY_DEFAULT_HOT_FOLDER = 'default_hot_folder';
+	public const KEY_POLICIES = 'policies';
 	public const KEY_ALLOWED_GROUPS = 'allowed_groups';
 	public const KEY_UNPROTECT_GROUPS = 'unprotect_groups';
 	public const KEY_SYNC_MAX_SIZE = 'sync_max_size';
 	public const KEY_REQUEST_TIMEOUT_MAX = 'request_timeout_max';
 	public const KEY_VERIFY_TLS = 'verify_tls';
 	public const KEY_PURGE_VERSIONS = 'purge_versions';
-	public const KEY_POLICY_CACHE_TTL = 'policy_cache_ttl';
 	public const KEY_STALE_AFTER = 'stale_after';
 
 	public const DEFAULT_SYNC_MAX_SIZE = 26214400; // 25 MiB
 	public const DEFAULT_REQUEST_TIMEOUT_MAX = 600;
-	public const DEFAULT_POLICY_CACHE_TTL = 300;
 	public const DEFAULT_STALE_AFTER = 21600;
 
 	public function __construct(
@@ -73,6 +73,52 @@ final class ConfigService {
 
 	public function setDefaultHotFolder(string $hotFolderId): void {
 		$this->appConfig->setValueString(Application::APP_ID, self::KEY_DEFAULT_HOT_FOLDER, $hotFolderId);
+	}
+
+	/**
+	 * Admin-maintained protection policy list (SDD §15 Q1a): the Seclore DRM
+	 * tenant API has no Hot Folder listing endpoint, so the offered policies
+	 * are configured here.
+	 *
+	 * @return HotFolder[]
+	 */
+	public function getPolicies(): array {
+		$raw = $this->appConfig->getValueString(Application::APP_ID, self::KEY_POLICIES, '[]');
+		$list = json_decode($raw, true);
+		if (!is_array($list)) {
+			return [];
+		}
+		$policies = [];
+		foreach ($list as $item) {
+			if (is_array($item)
+				&& is_string($item['id'] ?? null) && $item['id'] !== ''
+				&& is_string($item['name'] ?? null) && $item['name'] !== '') {
+				$policies[] = new HotFolder(
+					$item['id'],
+					$item['name'],
+					is_string($item['description'] ?? null) ? $item['description'] : '',
+				);
+			}
+		}
+		return $policies;
+	}
+
+	/** @param array<int, array{id: string, name: string, description?: string}> $policies */
+	public function setPolicies(array $policies): void {
+		$normalized = [];
+		foreach ($policies as $policy) {
+			$id = trim((string)($policy['id'] ?? ''));
+			$name = trim((string)($policy['name'] ?? ''));
+			if ($id === '' || $name === '') {
+				continue;
+			}
+			$normalized[] = [
+				'id' => $id,
+				'name' => $name,
+				'description' => trim((string)($policy['description'] ?? '')),
+			];
+		}
+		$this->appConfig->setValueString(Application::APP_ID, self::KEY_POLICIES, json_encode($normalized, JSON_THROW_ON_ERROR));
 	}
 
 	/** @return string[] group ids allowed to protect; empty means everyone (SDD §8.2) */
@@ -128,14 +174,6 @@ final class ConfigService {
 
 	public function setPurgeVersions(bool $purge): void {
 		$this->appConfig->setValueBool(Application::APP_ID, self::KEY_PURGE_VERSIONS, $purge);
-	}
-
-	public function getPolicyCacheTtl(): int {
-		return $this->appConfig->getValueInt(Application::APP_ID, self::KEY_POLICY_CACHE_TTL, self::DEFAULT_POLICY_CACHE_TTL);
-	}
-
-	public function setPolicyCacheTtl(int $seconds): void {
-		$this->appConfig->setValueInt(Application::APP_ID, self::KEY_POLICY_CACHE_TTL, $seconds);
 	}
 
 	/** Watchdog window in seconds for stuck in-flight states (SDD §9 E14). */
