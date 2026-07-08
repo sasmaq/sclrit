@@ -45,13 +45,17 @@ final class PolicyService {
 		return $folders;
 	}
 
-	public function exists(string $hotFolderId): bool {
+	public function find(string $hotFolderId): ?HotFolder {
 		foreach ($this->getPolicies() as $policy) {
 			if ($policy->id === $hotFolderId) {
-				return true;
+				return $policy;
 			}
 		}
-		return false;
+		return null;
+	}
+
+	public function exists(string $hotFolderId): bool {
+		return $this->find($hotFolderId) !== null;
 	}
 
 	public function invalidate(): void {

@@ -22,6 +22,17 @@ Protection is performed by your organisation's Seclore Policy Server. The protec
 		<php min-version="8.1"/>
 		<nextcloud min-version="31" max-version="31"/>
 	</dependencies>
+	<background-jobs>
+		<job>OCA\FilesSeclore\BackgroundJob\StaleSweepJob</job>
+	</background-jobs>
+	<repair-steps>
+		<install>
+			<step>OCA\FilesSeclore\Migration\RegisterMetadata</step>
+		</install>
+		<post-migration>
+			<step>OCA\FilesSeclore\Migration\RegisterMetadata</step>
+		</post-migration>
+	</repair-steps>
 	<commands>
 		<command>OCA\FilesSeclore\Command\TestConnection</command>
 	</commands>

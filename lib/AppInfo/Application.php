@@ -8,6 +8,9 @@ declare(strict_types=1);
 
 namespace OCA\FilesSeclore\AppInfo;
 
+use OCA\Files\Event\LoadAdditionalScriptsEvent;
+use OCA\FilesSeclore\Capabilities;
+use OCA\FilesSeclore\Listener\LoadAdditionalScriptsListener;
 use OCA\FilesSeclore\Service\ISecloreClient;
 use OCA\FilesSeclore\Service\SecloreClient;
 use OCP\AppFramework\App;
@@ -26,8 +29,14 @@ class Application extends App implements IBootstrap {
 		// The Seclore REST contract lives behind this interface (SDD §7, decision D3).
 		$context->registerServiceAlias(ISecloreClient::class, SecloreClient::class);
 
-		// Upcoming registrations (SDD §4): capability, event listeners,
-		// notification notifier, files-metadata provider.
+		// files_seclore: {enabled, canProtect, canUnprotect, defaultPolicy} (SDD §4.3).
+		$context->registerCapability(Capabilities::class);
+
+		// Files web UI integration bundle (SDD §5.1).
+		$context->registerEventListener(LoadAdditionalScriptsEvent::class, LoadAdditionalScriptsListener::class);
+
+		// Upcoming registrations (SDD §4.6, §6.1): activity provider, notification
+		// notifier, NodeDeletedEvent listener for state-row lifecycle.
 	}
 
 	public function boot(IBootContext $context): void {

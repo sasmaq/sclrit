@@ -1,0 +1,35 @@
+{
+    "name": "files_seclore",
+    "description": "Nextcloud app: protect files on demand with Seclore Enterprise DRM",
+    "version": "0.1.0",
+    "private": true,
+    "type": "module",
+    "license": "AGPL-3.0-or-later",
+    "scripts": {
+        "build": "vite build --mode production",
+        "dev": "vite build --mode development",
+        "watch": "vite build --mode development --watch",
+        "typecheck": "vue-tsc --noEmit"
+    },
+    "dependencies": {
+        "@nextcloud/axios": "^2.5.1",
+        "@nextcloud/capabilities": "^1.2.0",
+        "@nextcloud/dialogs": "^5.3.8",
+        "@nextcloud/event-bus": "^3.3.2",
+        "@nextcloud/files": "^3.10.2",
+        "@nextcloud/l10n": "^3.2.0",
+        "@nextcloud/router": "^3.0.1",
+        "@nextcloud/vue": "^8.23.1",
+        "vue": "^2.7.16"
+    },
+    "devDependencies": {
+        "@nextcloud/vite-config": "^1.7.2",
+        "sass": "^1.80.0",
+        "typescript": "^5.6.3",
+        "vite": "^7.1.10",
+        "vue-tsc": "^2.1.10"
+    },
+    "engines": {
+        "node": ">=20.19"
+    }
+}
