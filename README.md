@@ -19,7 +19,7 @@ Feature-complete for the core protect/unprotect flow — **pending reconciliatio
 - [x] Files UI (SDD §5): protect/unprotect actions (single + batch), policy picker, inline protected badge, Seclore sidebar tab
 - [x] Admin settings UI (SDD §4.6): connection + test, default policy, group gates, thresholds (Admin settings → Security)
 - [x] Activity audit trail (`file_protected`, `file_unprotected`, `protect_failed`) + notifications for queued operations (SDD §4.6)
-- [ ] State-row lifecycle listener on file deletion (SDD §6.1)
+- [x] State-row lifecycle on file deletion (SDD §6.1): trash-aware `NodeDeletedEvent` listener + orphan sweep
 
 ## Building the frontend
 

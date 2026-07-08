@@ -67,6 +67,22 @@ class SecloreStateMapper extends QBMapper {
 		return $this->findEntities($qb);
 	}
 
+	/**
+	 * A batch of rows with id >= $minId, ordered by id — cursor-based paging
+	 * for the orphan sweep (SDD §6.1).
+	 *
+	 * @return SecloreState[]
+	 */
+	public function findChunk(int $minId, int $limit): array {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('*')
+			->from($this->getTableName())
+			->where($qb->expr()->gte('id', $qb->createNamedParameter($minId, IQueryBuilder::PARAM_INT)))
+			->orderBy('id', 'ASC')
+			->setMaxResults($limit);
+		return $this->findEntities($qb);
+	}
+
 	public function deleteByFileId(int $fileId): void {
 		$qb = $this->db->getQueryBuilder();
 		$qb->delete($this->getTableName())

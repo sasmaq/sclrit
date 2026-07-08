@@ -11,6 +11,7 @@ namespace OCA\FilesSeclore\AppInfo;
 use OCA\Files\Event\LoadAdditionalScriptsEvent;
 use OCA\FilesSeclore\Capabilities;
 use OCA\FilesSeclore\Listener\LoadAdditionalScriptsListener;
+use OCA\FilesSeclore\Listener\NodeDeletedListener;
 use OCA\FilesSeclore\Notification\Notifier;
 use OCA\FilesSeclore\Service\ISecloreClient;
 use OCA\FilesSeclore\Service\SecloreClient;
@@ -18,6 +19,7 @@ use OCP\AppFramework\App;
 use OCP\AppFramework\Bootstrap\IBootContext;
 use OCP\AppFramework\Bootstrap\IBootstrap;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
+use OCP\Files\Events\Node\NodeDeletedEvent;
 
 class Application extends App implements IBootstrap {
 	public const APP_ID = 'files_seclore';
@@ -40,8 +42,8 @@ class Application extends App implements IBootstrap {
 		// provider and setting are registered via info.xml.
 		$context->registerNotifierService(Notifier::class);
 
-		// Upcoming registrations (SDD §6.1): NodeDeletedEvent listener for
-		// state-row lifecycle.
+		// State-row lifecycle on file deletion (SDD §6.1).
+		$context->registerEventListener(NodeDeletedEvent::class, NodeDeletedListener::class);
 	}
 
 	public function boot(IBootContext $context): void {

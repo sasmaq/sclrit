@@ -8,24 +8,38 @@ declare(strict_types=1);
 
 namespace OCA\FilesSeclore\BackgroundJob;
 
+use OCA\FilesSeclore\AppInfo\Application;
 use OCA\FilesSeclore\Db\SecloreState;
 use OCA\FilesSeclore\Db\SecloreStateMapper;
 use OCA\FilesSeclore\Service\ConfigService;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\TimedJob;
+use OCP\Files\Config\IUserMountCache;
+use OCP\IAppConfig;
 use Psr\Log\LoggerInterface;
 
 /**
- * Watchdog (SDD §9 E14): in-flight rows older than `stale_after` are swept so
- * a crashed worker cannot wedge a file forever. Rows that carry a Seclore file
- * id belonged to an interrupted *unprotect* — their file content is still the
- * protected binary, so they are restored to `protected` instead of `failed`.
+ * Hourly state hygiene:
+ *
+ * - Watchdog (SDD §9 E14): in-flight rows older than `stale_after` are swept
+ *   so a crashed worker cannot wedge a file forever. Rows that carry a Seclore
+ *   file id belonged to an interrupted *unprotect* — their file content is
+ *   still the protected binary, so they are restored to `protected` instead
+ *   of `failed`.
+ * - Orphan sweep (SDD §6.1): rows whose file no longer exists anywhere in the
+ *   file cache are removed. This backstops the NodeDeletedListener for
+ *   deletions it cannot attribute (folder deletions, trash-less storages).
  */
 class StaleSweepJob extends TimedJob {
+	private const ORPHAN_BATCH = 500;
+	private const ORPHAN_CURSOR_KEY = 'orphan_sweep_cursor';
+
 	public function __construct(
 		ITimeFactory $time,
 		private readonly SecloreStateMapper $mapper,
 		private readonly ConfigService $config,
+		private readonly IUserMountCache $userMountCache,
+		private readonly IAppConfig $appConfig,
 		private readonly LoggerInterface $logger,
 	) {
 		parent::__construct($time);
@@ -34,6 +48,11 @@ class StaleSweepJob extends TimedJob {
 	}
 
 	protected function run($argument): void {
+		$this->sweepStale();
+		$this->pruneOrphans();
+	}
+
+	private function sweepStale(): void {
 		$cutoff = $this->time->getTime() - $this->config->getStaleAfter();
 		foreach ($this->mapper->findStale($cutoff) as $state) {
 			if ($state->getSecloreFileId() !== null) {
@@ -51,5 +70,30 @@ class StaleSweepJob extends TimedJob {
 				'requestId' => $state->getRequestId(),
 			]);
 		}
+	}
+
+	/**
+	 * Checks a bounded batch per run, resuming from a persistent cursor so
+	 * large tables are covered across runs without one heavy pass.
+	 */
+	private function pruneOrphans(): void {
+		$cursor = $this->appConfig->getValueInt(Application::APP_ID, self::ORPHAN_CURSOR_KEY, 0);
+		$rows = $this->mapper->findChunk($cursor, self::ORPHAN_BATCH);
+
+		$lastId = 0;
+		foreach ($rows as $state) {
+			$lastId = $state->getId();
+			if ($this->userMountCache->getMountsForFileId($state->getFileId()) === []) {
+				$this->mapper->delete($state);
+				$this->logger->info('Removed orphaned Seclore state row (file no longer exists)', [
+					'fileId' => $state->getFileId(),
+					'status' => $state->getStatus(),
+				]);
+			}
+		}
+
+		// Full batch → continue after the last row next run; otherwise wrap.
+		$nextCursor = count($rows) === self::ORPHAN_BATCH ? $lastId + 1 : 0;
+		$this->appConfig->setValueInt(Application::APP_ID, self::ORPHAN_CURSOR_KEY, $nextCursor);
 	}
 }
