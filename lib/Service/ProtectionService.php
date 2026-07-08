@@ -8,6 +8,8 @@ declare(strict_types=1);
 
 namespace OCA\FilesSeclore\Service;
 
+use OCA\FilesSeclore\Activity\ActivityPublisher;
+use OCA\FilesSeclore\AppInfo\Application;
 use OCA\FilesSeclore\BackgroundJob\ProtectJob;
 use OCA\FilesSeclore\BackgroundJob\UnprotectJob;
 use OCA\FilesSeclore\Db\SecloreState;
@@ -22,6 +24,7 @@ use OCA\FilesSeclore\Exceptions\PolicyNotFoundException;
 use OCA\FilesSeclore\Exceptions\ProtectionException;
 use OCA\FilesSeclore\Exceptions\SecloreApiException;
 use OCA\FilesSeclore\Exceptions\UnsupportedFileException;
+use OCA\FilesSeclore\Notification\Notifier;
 use OCA\FilesSeclore\Service\Dto\HotFolder;
 use OCA\FilesSeclore\Service\Dto\ProtectionState;
 use OCP\AppFramework\Db\DoesNotExistException;
@@ -35,6 +38,7 @@ use OCP\Files\NotFoundException;
 use OCP\FilesMetadata\IFilesMetadataManager;
 use OCP\IGroupManager;
 use OCP\IUserManager;
+use OCP\Notification\IManager as INotificationManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 
@@ -66,6 +70,8 @@ final class ProtectionService {
 		private readonly IJobList $jobList,
 		private readonly IFilesMetadataManager $metadataManager,
 		private readonly ITimeFactory $timeFactory,
+		private readonly ActivityPublisher $activity,
+		private readonly INotificationManager $notificationManager,
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
 	) {
@@ -208,12 +214,14 @@ final class ProtectionService {
 			$this->logger->info('ProtectJob: file deleted while queued, dropping state row', ['fileId' => $fileId]);
 			return;
 		} catch (\Throwable $e) {
-			$this->markFailed($state, $e);
+			$this->markFailed($state, $e, $file ?? null);
+			$this->pushNotification($userId, Notifier::SUBJECT_PROTECT_FAILED, $state);
 			return;
 		}
 
 		try {
 			$this->executeProtect($state, $userId);
+			$this->pushNotification($userId, Notifier::SUBJECT_PROTECT_DONE, $state, $file->getName());
 		} catch (SecloreApiException $e) {
 			if ($e->isRetryable() && $state->getAttempts() < self::MAX_ATTEMPTS) {
 				// executeProtect marked the row failed; flip back to pending and
@@ -228,12 +236,13 @@ final class ProtectionService {
 					'attempt' => $state->getAttempts(),
 					'runAfter' => $runAfter,
 				]);
+				return;
 			}
-			// TODO(SDD §4.6): push a failure Notification on final failure.
+			$this->pushNotification($userId, Notifier::SUBJECT_PROTECT_FAILED, $state, $file->getName());
 		} catch (\Throwable) {
 			// Already marked failed and logged by executeProtect.
+			$this->pushNotification($userId, Notifier::SUBJECT_PROTECT_FAILED, $state, $file->getName());
 		}
-		// TODO(SDD §4.6): push a completion Notification on success.
 	}
 
 	/** UnprotectJob entry point; mirrors runQueuedProtect. Never throws. */
@@ -256,11 +265,13 @@ final class ProtectionService {
 			return;
 		} catch (\Throwable $e) {
 			$this->restoreProtected($state, $e);
+			$this->pushNotification($userId, Notifier::SUBJECT_UNPROTECT_FAILED, $state);
 			return;
 		}
 
 		try {
 			$this->executeUnprotect($state, $userId);
+			$this->pushNotification($userId, Notifier::SUBJECT_UNPROTECT_DONE, $state, $file->getName());
 		} catch (SecloreApiException $e) {
 			if ($e->isRetryable() && $state->getAttempts() < self::MAX_ATTEMPTS) {
 				$state->setStatus(SecloreState::STATUS_PENDING);
@@ -268,9 +279,12 @@ final class ProtectionService {
 				$this->mapper->update($state);
 				$runAfter = $this->timeFactory->getTime() + self::RETRY_BACKOFF_S * $state->getAttempts();
 				$this->jobList->scheduleAfter(UnprotectJob::class, $runAfter, ['fileId' => $fileId, 'userId' => $userId]);
+				return;
 			}
+			$this->pushNotification($userId, Notifier::SUBJECT_UNPROTECT_FAILED, $state, $file->getName());
 		} catch (\Throwable) {
 			// Already restored to protected and logged by executeUnprotect.
+			$this->pushNotification($userId, Notifier::SUBJECT_UNPROTECT_FAILED, $state, $file->getName());
 		}
 	}
 
@@ -343,7 +357,7 @@ final class ProtectionService {
 
 			$this->setProtectedFlag($fileId, true);
 			$this->purgeVersions($userId, $fresh);
-			// TODO(SDD §4.6): publish an Activity event — next milestone.
+			$this->activity->fileProtected($userId, $fresh, $state->getPolicyName());
 
 			$this->logger->info('Seclore protect succeeded', [
 				'fileId' => $fileId,
@@ -354,7 +368,7 @@ final class ProtectionService {
 			]);
 			return ProtectionState::fromEntity($state);
 		} catch (\Throwable $e) {
-			$this->markFailed($state, $e);
+			$this->markFailed($state, $e, $file ?? null);
 			throw $e;
 		}
 	}
@@ -414,8 +428,8 @@ final class ProtectionService {
 
 			$this->mapper->delete($state);
 			$this->setProtectedFlag($fileId, false);
-			// Unprotect is always audited (SDD §4.1); the structured log below is
-			// the interim trail until the Activity provider lands (§4.6).
+			// Unprotect is always audited (SDD §4.1): Activity event + structured log.
+			$this->activity->fileUnprotected($userId, $fresh, $state->getPolicyName());
 			$this->logger->info('Seclore unprotect succeeded', [
 				'fileId' => $fileId,
 				'userId' => $userId,
@@ -639,7 +653,7 @@ final class ProtectionService {
 		}
 	}
 
-	private function markFailed(SecloreState $state, \Throwable $e): void {
+	private function markFailed(SecloreState $state, \Throwable $e, ?File $file = null): void {
 		// Only messages from our own exception hierarchy are user-safe (SDD §6.1 last_error).
 		$message = ($e instanceof ProtectionException || $e instanceof SecloreApiException)
 			? $e->getMessage()
@@ -652,6 +666,13 @@ final class ProtectionService {
 		} catch (\Throwable $updateError) {
 			$this->logger->error('Could not persist failed protection state', ['fileId' => $state->getFileId(), 'exception' => $updateError]);
 		}
+		$this->activity->protectFailed(
+			$state->getRequestedBy(),
+			$state->getFileId(),
+			$file?->getName(),
+			$state->getPolicyName(),
+			(string)$state->getLastError(),
+		);
 		$this->logger->error('Seclore operation failed', [
 			'fileId' => $state->getFileId(),
 			'requestId' => $state->getRequestId(),
@@ -682,6 +703,33 @@ final class ProtectionService {
 			'errorClass' => $e::class,
 			'exception' => $e,
 		]);
+	}
+
+	/**
+	 * Push a completion/failure notification for a queued operation (SDD §4.6).
+	 * Best-effort: a broken notification stack never fails the operation.
+	 */
+	private function pushNotification(string $userId, string $subject, SecloreState $state, ?string $fileName = null): void {
+		try {
+			$notification = $this->notificationManager->createNotification();
+			$notification->setApp(Application::APP_ID)
+				->setUser($userId)
+				->setDateTime($this->timeFactory->getDateTime())
+				->setObject('seclore', (string)$state->getFileId())
+				->setSubject($subject, [
+					'fileId' => $state->getFileId(),
+					'fileName' => $fileName ?? '',
+					'policy' => (string)$state->getPolicyName(),
+					'error' => (string)$state->getLastError(),
+				]);
+			$this->notificationManager->notify($notification);
+		} catch (\Throwable $e) {
+			$this->logger->warning('Could not push a Seclore notification', [
+				'fileId' => $state->getFileId(),
+				'subject' => $subject,
+				'exception' => $e,
+			]);
+		}
 	}
 
 	private function touch(SecloreState $state): void {

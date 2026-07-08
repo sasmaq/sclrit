@@ -11,6 +11,7 @@ namespace OCA\FilesSeclore\AppInfo;
 use OCA\Files\Event\LoadAdditionalScriptsEvent;
 use OCA\FilesSeclore\Capabilities;
 use OCA\FilesSeclore\Listener\LoadAdditionalScriptsListener;
+use OCA\FilesSeclore\Notification\Notifier;
 use OCA\FilesSeclore\Service\ISecloreClient;
 use OCA\FilesSeclore\Service\SecloreClient;
 use OCP\AppFramework\App;
@@ -35,8 +36,12 @@ class Application extends App implements IBootstrap {
 		// Files web UI integration bundle (SDD §5.1).
 		$context->registerEventListener(LoadAdditionalScriptsEvent::class, LoadAdditionalScriptsListener::class);
 
-		// Upcoming registrations (SDD §4.6, §6.1): activity provider, notification
-		// notifier, NodeDeletedEvent listener for state-row lifecycle.
+		// Async completion/failure notifications (SDD §4.6); the activity
+		// provider and setting are registered via info.xml.
+		$context->registerNotifierService(Notifier::class);
+
+		// Upcoming registrations (SDD §6.1): NodeDeletedEvent listener for
+		// state-row lifecycle.
 	}
 
 	public function boot(IBootContext $context): void {

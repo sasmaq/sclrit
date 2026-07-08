@@ -39,4 +39,12 @@ Protection is performed by your organisation's Seclore Policy Server. The protec
 	<settings>
 		<admin>OCA\FilesSeclore\Settings\AdminSettings</admin>
 	</settings>
+	<activity>
+		<settings>
+			<setting>OCA\FilesSeclore\Activity\Setting</setting>
+		</settings>
+		<providers>
+			<provider>OCA\FilesSeclore\Activity\Provider</provider>
+		</providers>
+	</activity>
 </info>
