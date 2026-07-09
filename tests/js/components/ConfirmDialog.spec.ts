@@ -1,9 +1,11 @@
+import type { Wrapper } from '@vue/test-utils'
+import type Vue from 'vue'
+
+import { mount } from '@vue/test-utils'
 /**
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 import { describe, expect, it, vi } from 'vitest'
-import { mount, type Wrapper } from '@vue/test-utils'
-import type Vue from 'vue'
 import ConfirmDialog from '../../../src/components/ConfirmDialog.vue'
 
 vi.mock('@nextcloud/vue/dist/Components/NcButton.js', async () => ({
@@ -13,8 +15,8 @@ vi.mock('@nextcloud/vue/dist/Components/NcDialog.js', async () => ({
 	default: (await import('../nc-stubs')).NcDialogStub,
 }))
 
-const mountDialog = (props: Record<string, unknown> = {}): Wrapper<Vue> =>
-	mount(ConfirmDialog, {
+function mountDialog(props: Record<string, unknown> = {}): Wrapper<Vue> {
+	return mount(ConfirmDialog, {
 		propsData: {
 			name: 'Remove protection',
 			message: 'Remove Seclore protection from "report.pdf"?',
@@ -22,8 +24,9 @@ const mountDialog = (props: Record<string, unknown> = {}): Wrapper<Vue> =>
 			...props,
 		},
 	})
+}
 
-const buttons = (wrapper: Wrapper<Vue>) => {
+function buttons(wrapper: Wrapper<Vue>) {
 	const all = wrapper.findAll('button.nc-button')
 	return { cancel: all.at(0), confirm: all.at(1) }
 }

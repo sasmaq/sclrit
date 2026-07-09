@@ -1,8 +1,9 @@
+import type * as ApiModule from '../../src/api'
+
 /**
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type * as ApiModule from '../../src/api'
 
 const axios = vi.hoisted(() => ({
 	get: vi.fn(),
@@ -23,16 +24,18 @@ vi.mock('@nextcloud/router', () => ({
 
 const ocsResponse = (data: object) => ({ data: { ocs: { data } } })
 
-const state = (fileId: number, status = 'protected'): object => ({
-	fileId,
-	status,
-	hotFolderId: 'hf-1',
-	policyName: 'Confidential',
-	secloreFileId: 'sf-1',
-	requestedBy: 'alice',
-	updatedAt: 1700000000,
-	error: null,
-})
+function state(fileId: number, status = 'protected'): object {
+	return {
+		fileId,
+		status,
+		hotFolderId: 'hf-1',
+		policyName: 'Confidential',
+		secloreFileId: 'sf-1',
+		requestedBy: 'alice',
+		updatedAt: 1700000000,
+		error: null,
+	}
+}
 
 // api.ts keeps a module-level policy cache, so each test gets a fresh copy.
 let api: typeof ApiModule

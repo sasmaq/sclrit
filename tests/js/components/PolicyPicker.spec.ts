@@ -1,11 +1,13 @@
+import type { Wrapper } from '@vue/test-utils'
+import type Vue from 'vue'
+import type { Policy } from '../../../src/api'
+
+import { mount } from '@vue/test-utils'
 /**
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 import { describe, expect, it, vi } from 'vitest'
-import { mount, type Wrapper } from '@vue/test-utils'
-import type Vue from 'vue'
 import PolicyPicker from '../../../src/components/PolicyPicker.vue'
-import type { Policy } from '../../../src/api'
 
 vi.mock('@nextcloud/vue/dist/Components/NcButton.js', async () => ({
 	default: (await import('../nc-stubs')).NcButtonStub,
@@ -29,10 +31,11 @@ interface PickerVm {
 	onOpenChanged(open: boolean): void
 }
 
-const mountPicker = (props: Record<string, unknown> = {}): Wrapper<Vue> =>
-	mount(PolicyPicker, {
+function mountPicker(props: Record<string, unknown> = {}): Wrapper<Vue> {
+	return mount(PolicyPicker, {
 		propsData: { policies, ...props },
 	})
+}
 
 const vm = (wrapper: Wrapper<Vue>): PickerVm => wrapper.vm as unknown as PickerVm
 

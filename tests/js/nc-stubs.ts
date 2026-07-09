@@ -57,13 +57,15 @@ export const NcSettingsSectionStub = {
 }
 
 // The real fields use v-model with a custom model option (value/update:value).
-const fieldStub = (name: string, className: string) => ({
-	name,
-	model: { prop: 'value', event: 'update:value' },
-	props: ['value', 'label', 'type', 'placeholder'],
-	template: `<input class="${className}" :data-label="label" :value="value"
+function fieldStub(name: string, className: string) {
+	return {
+		name,
+		model: { prop: 'value', event: 'update:value' },
+		props: ['value', 'label', 'type', 'placeholder'],
+		template: `<input class="${className}" :data-label="label" :value="value"
 		@input="$emit('update:value', $event.target.value)" />`,
-})
+	}
+}
 
 export const NcTextFieldStub = fieldStub('NcTextField', 'nc-text-field')
 

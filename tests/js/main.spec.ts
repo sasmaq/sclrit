@@ -1,3 +1,9 @@
+import type { FileAction } from '@nextcloud/files'
+import type { Node, View } from '@nextcloud/files'
+
+import { showError, showInfo, showSuccess } from '@nextcloud/dialogs'
+import { emit } from '@nextcloud/event-bus'
+import { FileType, Permission } from '@nextcloud/files'
 /**
  * SPDX-License-Identifier: AGPL-3.0-or-later
  *
@@ -5,9 +11,6 @@
  * the protect/unprotect flows and the inline status badge.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { FileAction, FileType, Permission, type Node, type View } from '@nextcloud/files'
-import { showError, showInfo, showSuccess } from '@nextcloud/dialogs'
-import { emit } from '@nextcloud/event-bus'
 import { protectFile, unprotectFile } from '../../src/api'
 import { confirmDialog, pickPolicy } from '../../src/dialogs'
 import { openSecloreTab } from '../../src/sidebar'
@@ -53,31 +56,36 @@ const PROTECTED_ATTRIBUTE = 'metadata-sclrit-protected'
 const filesView = { id: 'files' } as View
 const trashbinView = { id: 'trashbin' } as View
 
-const fileState = (fileId: number, status: string) => ({
-	fileId,
-	status,
-	hotFolderId: null,
-	policyName: null,
-	secloreFileId: null,
-	requestedBy: null,
-	updatedAt: null,
-	error: null,
-})
+function fileState(fileId: number, status: string) {
+	return {
+		fileId,
+		status,
+		hotFolderId: null,
+		policyName: null,
+		secloreFileId: null,
+		requestedBy: null,
+		updatedAt: null,
+		error: null,
+	}
+}
 
 let nextFileid = 1
 
-const fakeNode = (overrides: Record<string, unknown> = {}): Node => ({
-	fileid: nextFileid++,
-	basename: 'document.odt',
-	path: '/document.odt',
-	type: FileType.File,
-	permissions: Permission.READ | Permission.UPDATE,
-	attributes: {} as Record<string, unknown>,
-	...overrides,
-}) as unknown as Node
+function fakeNode(overrides: Record<string, unknown> = {}): Node {
+	return ({
+		fileid: nextFileid++,
+		basename: 'document.odt',
+		path: '/document.odt',
+		type: FileType.File,
+		permissions: Permission.READ | Permission.UPDATE,
+		attributes: {} as Record<string, unknown>,
+		...overrides,
+	}) as unknown as Node
+}
 
-const protectedNode = (overrides: Record<string, unknown> = {}): Node =>
-	fakeNode({ attributes: { [PROTECTED_ATTRIBUTE]: '1' }, ...overrides })
+function protectedNode(overrides: Record<string, unknown> = {}): Node {
+	return fakeNode({ attributes: { [PROTECTED_ATTRIBUTE]: '1' }, ...overrides })
+}
 
 /** Import main.ts fresh with the given capabilities and collect its actions. */
 async function loadActions(caps: Record<string, unknown>): Promise<Record<string, FileAction>> {
@@ -184,8 +192,7 @@ describe('protect flow', () => {
 	it('shows a single picker for a batch and reports queued files separately', async () => {
 		const { 'sclrit-protect': protect } = await loadActions(allCaps)
 		vi.mocked(pickPolicy).mockResolvedValue('hf-1')
-		vi.mocked(protectFile).mockImplementation(async (fileId) =>
-			fileState(fileId, fileId === 1 ? 'protected' : 'pending'))
+		vi.mocked(protectFile).mockImplementation(async (fileId) => fileState(fileId, fileId === 1 ? 'protected' : 'pending'))
 
 		const nodes = [fakeNode(), fakeNode()]
 		const results = await protect.execBatch!(nodes, filesView, '/')

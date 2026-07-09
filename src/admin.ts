@@ -5,6 +5,7 @@
  */
 import Vue from 'vue'
 import AdminSettings from './components/AdminSettings.vue'
+
 import '@nextcloud/dialogs/style.css'
 
 const View = Vue.extend(AdminSettings)

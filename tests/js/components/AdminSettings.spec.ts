@@ -1,20 +1,20 @@
+import type { Wrapper } from '@vue/test-utils'
+import type Vue from 'vue'
+import type { AdminConfig, ConnectionTestResult, Policy } from '../../../src/api'
+
+import { showError, showSuccess } from '@nextcloud/dialogs'
+import { confirmPassword } from '@nextcloud/password-confirmation'
+import { mount } from '@vue/test-utils'
 /**
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { mount, type Wrapper } from '@vue/test-utils'
-import type Vue from 'vue'
-import { showError, showSuccess } from '@nextcloud/dialogs'
-import { confirmPassword } from '@nextcloud/password-confirmation'
 import AdminSettings from '../../../src/components/AdminSettings.vue'
 import {
 	fetchAdminConfig,
 	saveAdminConfig,
 	searchGroups,
 	testConnection,
-	type AdminConfig,
-	type ConnectionTestResult,
-	type Policy,
 } from '../../../src/api'
 
 vi.mock('../../../src/api', () => ({
@@ -61,20 +61,22 @@ vi.mock('@nextcloud/vue/dist/Components/NcTextField.js', async () => ({
 
 const MIB = 1048576
 
-const storedConfig = (): AdminConfig => ({
-	baseUrl: 'https://policy.example.com/api',
-	appId: 'tenant-1',
-	appSecretSet: true,
-	defaultHotFolder: 'hf-1',
-	policies: [{ id: 'hf-1', name: 'Confidential', description: 'View only' }],
-	allowedGroups: ['staff'],
-	unprotectGroups: ['compliance'],
-	syncMaxSize: 25 * MIB,
-	requestTimeoutMax: 600,
-	verifyTls: true,
-	purgeVersions: true,
-	staleAfter: 21600,
-})
+function storedConfig(): AdminConfig {
+	return {
+		baseUrl: 'https://policy.example.com/api',
+		appId: 'tenant-1',
+		appSecretSet: true,
+		defaultHotFolder: 'hf-1',
+		policies: [{ id: 'hf-1', name: 'Confidential', description: 'View only' }],
+		allowedGroups: ['staff'],
+		unprotectGroups: ['compliance'],
+		syncMaxSize: 25 * MIB,
+		requestTimeoutMax: 600,
+		verifyTls: true,
+		purgeVersions: true,
+		staleAfter: 21600,
+	}
+}
 
 interface AdminVm {
 	loading: boolean

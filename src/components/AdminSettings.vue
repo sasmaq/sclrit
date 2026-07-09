@@ -7,7 +7,8 @@
 -->
 <template>
 	<div class="seclore-admin">
-		<NcSettingsSection :name="t('sclrit', 'Seclore File Protection')"
+		<NcSettingsSection
+			:name="t('sclrit', 'Seclore File Protection')"
 			:description="t('sclrit', 'Protect files on demand with Seclore Enterprise DRM. Protecting a file transmits its content to the Policy Server configured below.')"
 			doc-url="https://github.com/nextcloud/sclrit">
 			<NcLoadingIcon v-if="loading" :size="32" />
@@ -18,20 +19,25 @@
 
 		<template v-if="!loading && !loadError">
 			<!-- Connection (SDD §8.1) -->
-			<NcSettingsSection :name="t('sclrit', 'Policy Server connection')"
+			<NcSettingsSection
+				:name="t('sclrit', 'Policy Server connection')"
 				:description="t('sclrit', 'Register this app as an enterprise application in the Seclore console and enter its credentials here. The base URL must use HTTPS.')">
 				<div class="seclore-admin__form">
-					<NcTextField v-model="form.baseUrl"
+					<NcTextField
+						v-model="form.baseUrl"
 						:label="t('sclrit', 'Policy Server base URL')"
 						placeholder="https://policy.example.com/api"
 						type="url" />
-					<NcTextField v-model="form.appId"
+					<NcTextField
+						v-model="form.appId"
 						:label="t('sclrit', 'Tenant ID')" />
-					<NcPasswordField v-model="appSecret"
+					<NcPasswordField
+						v-model="appSecret"
 						:label="t('sclrit', 'Tenant secret')"
 						:placeholder="appSecretSet ? t('sclrit', '•••• (a secret is saved — leave empty to keep it)') : ''"
 						autocomplete="new-password" />
-					<NcCheckboxRadioSwitch :checked="form.verifyTls"
+					<NcCheckboxRadioSwitch
+						:checked="form.verifyTls"
 						type="switch"
 						@update:checked="form.verifyTls = $event">
 						{{ t('sclrit', 'Verify the TLS certificate') }}
@@ -52,15 +58,19 @@
 			</NcSettingsSection>
 
 			<!-- Policies (SDD §15 Q1a: no listing API — admin-maintained) -->
-			<NcSettingsSection :name="t('sclrit', 'Protection policies')"
+			<NcSettingsSection
+				:name="t('sclrit', 'Protection policies')"
 				:description="t('sclrit', 'The Seclore API does not expose the Hot Folder list, so the policies offered to users are maintained here. Find the Hot Folder IDs in the Seclore admin console.')">
 				<div class="seclore-admin__form">
 					<div v-for="(policy, index) in form.policies" :key="index" class="seclore-admin__policy">
-						<NcTextField v-model="policy.id"
+						<NcTextField
+							v-model="policy.id"
 							:label="t('sclrit', 'Hot Folder ID')" />
-						<NcTextField v-model="policy.name"
+						<NcTextField
+							v-model="policy.name"
 							:label="t('sclrit', 'Display name')" />
-						<NcTextField v-model="policy.description"
+						<NcTextField
+							v-model="policy.description"
 							:label="t('sclrit', 'Description (optional, shown in the picker)')" />
 						<div>
 							<NcButton type="tertiary" @click="removePolicy(index)">
@@ -77,23 +87,27 @@
 			</NcSettingsSection>
 
 			<!-- Defaults (SDD Appendix A, decision D7) -->
-			<NcSettingsSection :name="t('sclrit', 'Protection defaults')"
+			<NcSettingsSection
+				:name="t('sclrit', 'Protection defaults')"
 				:description="t('sclrit', 'The default policy is pre-selected in the picker and used by API calls that do not name one.')">
 				<div class="seclore-admin__form">
 					<div class="seclore-admin__field">
 						<label for="seclore-default-policy">{{ t('sclrit', 'Default policy') }}</label>
-						<NcSelect v-model="defaultPolicyModel"
+						<NcSelect
+							v-model="defaultPolicyModel"
 							input-id="seclore-default-policy"
 							:options="form.policies"
 							label="name"
 							:placeholder="form.policies.length === 0 ? t('sclrit', 'Add a protection policy above first') : t('sclrit', 'No default')"
 							:clearable="true" />
 					</div>
-					<NcTextField v-model="form.syncMaxSizeMiB"
+					<NcTextField
+						v-model="form.syncMaxSizeMiB"
 						:label="t('sclrit', 'Synchronous protection up to (MiB)')"
 						type="number"
 						:helper-text="t('sclrit', 'Larger files are protected by a background job and the user is notified on completion.')" />
-					<NcCheckboxRadioSwitch :checked="form.purgeVersions"
+					<NcCheckboxRadioSwitch
+						:checked="form.purgeVersions"
 						type="switch"
 						@update:checked="form.purgeVersions = $event">
 						{{ t('sclrit', 'Delete previous file versions after successful protection') }}
@@ -107,12 +121,14 @@
 			</NcSettingsSection>
 
 			<!-- Access control (SDD §8.2) -->
-			<NcSettingsSection :name="t('sclrit', 'Access control')"
+			<NcSettingsSection
+				:name="t('sclrit', 'Access control')"
 				:description="t('sclrit', 'Who may protect and unprotect files. Unprotection is always audited.')">
 				<div class="seclore-admin__form">
 					<div class="seclore-admin__field">
 						<label for="seclore-allowed-groups">{{ t('sclrit', 'Groups allowed to protect (empty: everyone)') }}</label>
-						<NcSelect v-model="form.allowedGroups"
+						<NcSelect
+							v-model="form.allowedGroups"
 							input-id="seclore-allowed-groups"
 							:options="groupOptions"
 							:multiple="true"
@@ -121,7 +137,8 @@
 					</div>
 					<div class="seclore-admin__field">
 						<label for="seclore-unprotect-groups">{{ t('sclrit', 'Groups allowed to unprotect (empty: nobody)') }}</label>
-						<NcSelect v-model="form.unprotectGroups"
+						<NcSelect
+							v-model="form.unprotectGroups"
 							input-id="seclore-unprotect-groups"
 							:options="groupOptions"
 							:multiple="true"
@@ -134,16 +151,18 @@
 			<!-- Advanced (SDD Appendix A) -->
 			<NcSettingsSection :name="t('sclrit', 'Advanced')">
 				<div class="seclore-admin__form">
-					<NcTextField v-model="form.requestTimeoutMax"
+					<NcTextField
+						v-model="form.requestTimeoutMax"
 						:label="t('sclrit', 'Maximum request timeout (seconds)')"
 						type="number" />
-					<NcTextField v-model="form.staleAfter"
+					<NcTextField
+						v-model="form.staleAfter"
 						:label="t('sclrit', 'Mark stuck operations as failed after (seconds)')"
 						type="number" />
 				</div>
 			</NcSettingsSection>
 
-			<NcSettingsSection :name="''">
+			<NcSettingsSection name="">
 				<div class="seclore-admin__actions">
 					<NcButton type="primary" :disabled="saving" @click="save">
 						{{ saving ? t('sclrit', 'Saving…') : t('sclrit', 'Save settings') }}
@@ -155,29 +174,29 @@
 </template>
 
 <script lang="ts">
-import Vue from 'vue'
+import type { AdminConfig, ConnectionTestResult, Policy } from '../api'
+
 import { showError, showSuccess } from '@nextcloud/dialogs'
 import { translate as t } from '@nextcloud/l10n'
 import { confirmPassword } from '@nextcloud/password-confirmation'
-import NcButton from '@nextcloud/vue/dist/Components/NcButton.js'
-import NcCheckboxRadioSwitch from '@nextcloud/vue/dist/Components/NcCheckboxRadioSwitch.js'
-import NcLoadingIcon from '@nextcloud/vue/dist/Components/NcLoadingIcon.js'
-import NcNoteCard from '@nextcloud/vue/dist/Components/NcNoteCard.js'
-import NcPasswordField from '@nextcloud/vue/dist/Components/NcPasswordField.js'
-import NcSelect from '@nextcloud/vue/dist/Components/NcSelect.js'
-import NcSettingsSection from '@nextcloud/vue/dist/Components/NcSettingsSection.js'
-import NcTextField from '@nextcloud/vue/dist/Components/NcTextField.js'
-import '@nextcloud/password-confirmation/style.css'
+import Vue from 'vue'
+import NcButton from '@nextcloud/vue/components/NcButton'
+import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
+import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
+import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
+import NcPasswordField from '@nextcloud/vue/components/NcPasswordField'
+import NcSelect from '@nextcloud/vue/components/NcSelect'
+import NcSettingsSection from '@nextcloud/vue/components/NcSettingsSection'
+import NcTextField from '@nextcloud/vue/components/NcTextField'
 import {
 	fetchAdminConfig,
 	ocsErrorMessage,
 	saveAdminConfig,
 	searchGroups,
 	testConnection,
-	type AdminConfig,
-	type ConnectionTestResult,
-	type Policy,
 } from '../api'
+
+import '@nextcloud/password-confirmation/style.css'
 
 const MIB = 1048576
 
@@ -217,6 +236,7 @@ export default Vue.extend({
 				requestTimeoutMax: '600',
 				staleAfter: '21600',
 			},
+
 			testResult: null as ConnectionTestResult | null,
 			groupOptions: [] as string[],
 		}
@@ -233,6 +253,7 @@ export default Vue.extend({
 				return this.form.policies.find((p) => p.id === this.form.defaultHotFolder)
 					?? { id: this.form.defaultHotFolder, name: this.form.defaultHotFolder, description: '' }
 			},
+
 			set(policy: Policy | null) {
 				this.form.defaultHotFolder = policy?.id ?? ''
 			},

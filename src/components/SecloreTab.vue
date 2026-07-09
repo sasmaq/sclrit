@@ -14,14 +14,19 @@
 
 		<template v-else-if="state">
 			<!-- none -->
-			<NcEmptyContent v-if="state.status === 'none'"
+			<NcEmptyContent
+				v-if="state.status === 'none'"
 				:name="t('sclrit', 'Not protected')"
 				:description="t('sclrit', 'This file has no Seclore protection.')">
 				<template #icon>
 					<span class="seclore-tab__icon" v-html="lockOpenSvg" /><!-- eslint-disable-line vue/no-v-html -->
 				</template>
 				<template #action>
-					<NcButton v-if="canProtect" type="primary" :disabled="busy" @click="protect">
+					<NcButton
+						v-if="canProtect"
+						type="primary"
+						:disabled="busy"
+						@click="protect">
 						{{ t('sclrit', 'Protect with Seclore') }}
 					</NcButton>
 				</template>
@@ -64,10 +69,15 @@
 				</dl>
 
 				<div class="seclore-tab__actions">
-					<NcButton v-if="state.status === 'failed'" type="primary" :disabled="busy" @click="retry">
+					<NcButton
+						v-if="state.status === 'failed'"
+						type="primary"
+						:disabled="busy"
+						@click="retry">
 						{{ t('sclrit', 'Retry') }}
 					</NcButton>
-					<NcButton v-if="state.status === 'protected' && canUnprotect"
+					<NcButton
+						v-if="state.status === 'protected' && canUnprotect"
 						type="error"
 						:disabled="busy"
 						@click="unprotect">
@@ -80,15 +90,17 @@
 </template>
 
 <script lang="ts">
-import Vue from 'vue'
+import type { ProtectionState } from '../api'
+
 import { getCapabilities } from '@nextcloud/capabilities'
 import { showError, showInfo, showSuccess } from '@nextcloud/dialogs'
 import { translate as t } from '@nextcloud/l10n'
-import NcButton from '@nextcloud/vue/dist/Components/NcButton.js'
-import NcEmptyContent from '@nextcloud/vue/dist/Components/NcEmptyContent.js'
-import NcLoadingIcon from '@nextcloud/vue/dist/Components/NcLoadingIcon.js'
-import NcNoteCard from '@nextcloud/vue/dist/Components/NcNoteCard.js'
-import { fetchStates, ocsErrorMessage, protectFile, retryFile, unprotectFile, type ProtectionState } from '../api'
+import Vue from 'vue'
+import NcButton from '@nextcloud/vue/components/NcButton'
+import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
+import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
+import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
+import { fetchStates, ocsErrorMessage, protectFile, retryFile, unprotectFile } from '../api'
 import { confirmDialog, pickPolicy } from '../dialogs'
 import { lockOpenSvg } from '../icons'
 
@@ -156,7 +168,11 @@ export default Vue.extend({
 	methods: {
 		t,
 
-		/** Entry point used by the sidebar tab wrapper (mount and update). */
+		/**
+		 * Entry point used by the sidebar tab wrapper (mount and update).
+		 *
+		 * @param fileInfo
+		 */
 		setFileInfo(fileInfo: FileInfo): void {
 			this.fileInfo = fileInfo
 			this.state = null

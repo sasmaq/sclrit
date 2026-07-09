@@ -1,12 +1,12 @@
+import { showError, spawnDialog } from '@nextcloud/dialogs'
 /**
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { confirmDialog, pickPolicy } from '../../src/dialogs'
-import { fetchPolicies } from '../../src/api'
-import { showError, spawnDialog } from '@nextcloud/dialogs'
-import PolicyPicker from '../../src/components/PolicyPicker.vue'
 import ConfirmDialog from '../../src/components/ConfirmDialog.vue'
+import PolicyPicker from '../../src/components/PolicyPicker.vue'
+import { fetchPolicies } from '../../src/api'
+import { confirmDialog, pickPolicy } from '../../src/dialogs'
 
 vi.mock('../../src/api', () => ({
 	fetchPolicies: vi.fn(),
@@ -33,7 +33,7 @@ const policyList = {
 }
 
 /** The (props, callback) the picker was spawned with. */
-const spawnedPicker = () => {
+function spawnedPicker() {
 	const call = vi.mocked(spawnDialog).mock.calls.at(-1)!
 	return { props: call[1] as Record<string, unknown>, callback: call[2] as (result?: unknown) => void }
 }

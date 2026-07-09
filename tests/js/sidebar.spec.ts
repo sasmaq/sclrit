@@ -1,9 +1,10 @@
+import type { Node } from '@nextcloud/files'
+
 /**
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import type { Node } from '@nextcloud/files'
-import { TAB_ID, openSecloreTab, registerSecloreSidebarTab } from '../../src/sidebar'
+import { openSecloreTab, registerSecloreSidebarTab, TAB_ID } from '../../src/sidebar'
 
 const setFileInfo = vi.hoisted(() => vi.fn())
 

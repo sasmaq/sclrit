@@ -1,12 +1,15 @@
+import type { Wrapper } from '@vue/test-utils'
+import type Vue from 'vue'
+import type { ProtectionState, ProtectionStatus } from '../../../src/api'
+
+import { showError, showSuccess } from '@nextcloud/dialogs'
+import { mount } from '@vue/test-utils'
 /**
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { mount, type Wrapper } from '@vue/test-utils'
-import type Vue from 'vue'
-import { showError, showSuccess } from '@nextcloud/dialogs'
 import SecloreTab from '../../../src/components/SecloreTab.vue'
-import { fetchStates, protectFile, retryFile, unprotectFile, type ProtectionState, type ProtectionStatus } from '../../../src/api'
+import { fetchStates, protectFile, retryFile, unprotectFile } from '../../../src/api'
 import { confirmDialog, pickPolicy } from '../../../src/dialogs'
 
 const capabilities = vi.hoisted(() => ({ value: {} as Record<string, unknown> }))
@@ -50,17 +53,19 @@ vi.mock('@nextcloud/vue/dist/Components/NcNoteCard.js', async () => ({
 const PERMISSION_READ = 1
 const PERMISSION_UPDATE = 2
 
-const state = (overrides: Partial<ProtectionState> = {}): ProtectionState => ({
-	fileId: 42,
-	status: 'protected' as ProtectionStatus,
-	hotFolderId: 'hf-1',
-	policyName: 'Confidential',
-	secloreFileId: 'sf-9',
-	requestedBy: 'alice',
-	updatedAt: 1700000000,
-	error: null,
-	...overrides,
-})
+function state(overrides: Partial<ProtectionState> = {}): ProtectionState {
+	return {
+		fileId: 42,
+		status: 'protected' as ProtectionStatus,
+		hotFolderId: 'hf-1',
+		policyName: 'Confidential',
+		secloreFileId: 'sf-9',
+		requestedBy: 'alice',
+		updatedAt: 1700000000,
+		error: null,
+		...overrides,
+	}
+}
 
 interface TabVm {
 	setFileInfo(fileInfo: { id: number, name: string, permissions?: number }): void
@@ -79,8 +84,9 @@ async function openTab(
 	await wrapper.vm.$nextTick()
 }
 
-const buttonByText = (wrapper: Wrapper<Vue>, text: string) =>
-	wrapper.findAll('button.nc-button').wrappers.find((button) => button.text() === text)
+function buttonByText(wrapper: Wrapper<Vue>, text: string) {
+	return wrapper.findAll('button.nc-button').wrappers.find((button) => button.text() === text)
+}
 
 beforeEach(() => {
 	capabilities.value = { canProtect: true, canUnprotect: true }

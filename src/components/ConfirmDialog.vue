@@ -6,7 +6,9 @@
 -->
 <template>
 	<NcDialog :name="name" size="small" @update:open="onOpenChanged">
-		<p class="confirm-dialog__message">{{ message }}</p>
+		<p class="confirm-dialog__message">
+			{{ message }}
+		</p>
 		<template #actions>
 			<NcButton @click="close(false)">
 				{{ t('sclrit', 'Cancel') }}
@@ -19,10 +21,10 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue'
 import { translate as t } from '@nextcloud/l10n'
-import NcButton from '@nextcloud/vue/dist/Components/NcButton.js'
-import NcDialog from '@nextcloud/vue/dist/Components/NcDialog.js'
+import { defineComponent } from 'vue'
+import NcButton from '@nextcloud/vue/components/NcButton'
+import NcDialog from '@nextcloud/vue/components/NcDialog'
 
 export default defineComponent({
 	name: 'ConfirmDialog',
@@ -37,14 +39,17 @@ export default defineComponent({
 			type: String,
 			required: true,
 		},
+
 		message: {
 			type: String,
 			required: true,
 		},
+
 		confirmLabel: {
 			type: String,
 			required: true,
 		},
+
 		destructive: {
 			type: Boolean,
 			default: false,

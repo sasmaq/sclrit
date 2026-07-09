@@ -5,9 +5,9 @@
  */
 import { showError, spawnDialog } from '@nextcloud/dialogs'
 import { translate as t } from '@nextcloud/l10n'
-import { fetchPolicies, ocsErrorMessage } from './api'
 import ConfirmDialog from './components/ConfirmDialog.vue'
 import PolicyPicker from './components/PolicyPicker.vue'
+import { fetchPolicies, ocsErrorMessage } from './api'
 
 const LAST_POLICY_KEY = 'sclrit:last-policy'
 
@@ -15,6 +15,8 @@ const LAST_POLICY_KEY = 'sclrit:last-policy'
  * Open the policy picker and resolve with the chosen Hot Folder id, or null
  * when the user cancelled (or no policies could be loaded). The last choice is
  * remembered as a convenience, never as authorization (SDD §5.2).
+ *
+ * @param fileCount
  */
 export async function pickPolicy(fileCount: number): Promise<string | null> {
 	let policyList
@@ -50,7 +52,13 @@ export async function pickPolicy(fileCount: number): Promise<string | null> {
 	})
 }
 
-/** Explicit confirmation dialog; resolves with the user's decision. */
+/**
+ * Explicit confirmation dialog; resolves with the user's decision.
+ *
+ * @param name
+ * @param message
+ * @param confirmLabel
+ */
 export async function confirmDialog(name: string, message: string, confirmLabel: string): Promise<boolean> {
 	return await new Promise((resolve) => {
 		spawnDialog(ConfirmDialog, {

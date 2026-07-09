@@ -6,14 +6,16 @@
   Emits `close` with the chosen policy id, or without payload on cancel.
 -->
 <template>
-	<NcDialog :name="t('sclrit', 'Protect with Seclore')"
+	<NcDialog
+		:name="t('sclrit', 'Protect with Seclore')"
 		size="small"
 		@update:open="onOpenChanged">
 		<div class="policy-picker">
 			<p class="policy-picker__hint">
 				{{ t('sclrit', 'The chosen policy travels with the file and is enforced by Seclore wherever it goes.') }}
 			</p>
-			<NcSelect v-model="selected"
+			<NcSelect
+				v-model="selected"
 				class="policy-picker__select"
 				:options="policies"
 				label="name"
@@ -35,12 +37,14 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, type PropType } from 'vue'
-import { translate as t, translatePlural as n } from '@nextcloud/l10n'
-import NcButton from '@nextcloud/vue/dist/Components/NcButton.js'
-import NcDialog from '@nextcloud/vue/dist/Components/NcDialog.js'
-import NcSelect from '@nextcloud/vue/dist/Components/NcSelect.js'
+import type { PropType } from 'vue'
 import type { Policy } from '../api'
+
+import { translatePlural as n, translate as t } from '@nextcloud/l10n'
+import { defineComponent } from 'vue'
+import NcButton from '@nextcloud/vue/components/NcButton'
+import NcDialog from '@nextcloud/vue/components/NcDialog'
+import NcSelect from '@nextcloud/vue/components/NcSelect'
 
 export default defineComponent({
 	name: 'PolicyPicker',
@@ -56,10 +60,12 @@ export default defineComponent({
 			type: Array as PropType<Policy[]>,
 			required: true,
 		},
+
 		preselectedId: {
 			type: String,
 			default: '',
 		},
+
 		fileCount: {
 			type: Number,
 			default: 1,

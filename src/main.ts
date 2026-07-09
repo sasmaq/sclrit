@@ -1,3 +1,5 @@
+import type { Node, View } from '@nextcloud/files'
+
 /**
  * SPDX-License-Identifier: AGPL-3.0-or-later
  *
@@ -18,14 +20,13 @@ import {
 	Permission,
 	registerDavProperty,
 	registerFileAction,
-	type Node,
-	type View,
 } from '@nextcloud/files'
-import { translate as t, translatePlural as n } from '@nextcloud/l10n'
+import { translatePlural as n, translate as t } from '@nextcloud/l10n'
 import { ocsErrorMessage, protectFile, unprotectFile } from './api'
 import { confirmDialog, pickPolicy } from './dialogs'
 import { lockOpenSvg, lockPlusSvg, lockSvg } from './icons'
 import { openSecloreTab, registerSecloreSidebarTab } from './sidebar'
+
 import '@nextcloud/dialogs/style.css'
 
 interface SecloreCapabilities {
@@ -35,8 +36,8 @@ interface SecloreCapabilities {
 	defaultPolicy?: string
 }
 
-const capabilities: SecloreCapabilities =
-	((getCapabilities() as Record<string, unknown>).sclrit ?? {}) as SecloreCapabilities
+const capabilities: SecloreCapabilities
+	= ((getCapabilities() as Record<string, unknown>).sclrit ?? {}) as SecloreCapabilities
 
 // Expose the protection flag on PROPFIND results (SDD §4.5).
 const PROTECTED_ATTRIBUTE = 'metadata-sclrit-protected'
@@ -44,12 +45,21 @@ registerDavProperty('nc:' + PROTECTED_ATTRIBUTE, { nc: 'http://nextcloud.org/ns'
 
 const HIDDEN_VIEWS = ['trashbin', 'versions']
 
+/**
+ *
+ * @param node
+ */
 function isMarkedProtected(node: Node): boolean {
 	const value = node.attributes?.[PROTECTED_ATTRIBUTE]
 	return value === true || value === 1 || value === '1' || value === 'true'
 }
 
-/** Update the node's local flag so lists refresh without a new PROPFIND. */
+/**
+ * Update the node's local flag so lists refresh without a new PROPFIND.
+ *
+ * @param node
+ * @param isProtected
+ */
 function markNode(node: Node, isProtected: boolean): void {
 	try {
 		node.attributes[PROTECTED_ATTRIBUTE] = isProtected ? '1' : '0'
@@ -59,7 +69,13 @@ function markNode(node: Node, isProtected: boolean): void {
 	}
 }
 
-/** Map over nodes with bounded concurrency (SDD §5.1: 3 parallel requests). */
+/**
+ * Map over nodes with bounded concurrency (SDD §5.1: 3 parallel requests).
+ *
+ * @param items
+ * @param size
+ * @param fn
+ */
 async function mapPool<T, R>(items: T[], size: number, fn: (item: T) => Promise<R>): Promise<R[]> {
 	const results: R[] = new Array(items.length)
 	let next = 0
@@ -73,7 +89,11 @@ async function mapPool<T, R>(items: T[], size: number, fn: (item: T) => Promise<
 	return results
 }
 
-/** Shared protect flow for exec and execBatch: one picker, N requests. */
+/**
+ * Shared protect flow for exec and execBatch: one picker, N requests.
+ *
+ * @param nodes
+ */
 async function protectNodes(nodes: Node[]): Promise<(boolean | null)[]> {
 	const policyId = await pickPolicy(nodes.length)
 	if (policyId === null) {
@@ -115,6 +135,10 @@ async function protectNodes(nodes: Node[]): Promise<(boolean | null)[]> {
 	return results
 }
 
+/**
+ *
+ * @param nodes
+ */
 async function unprotectNodes(nodes: Node[]): Promise<(boolean | null)[]> {
 	const confirmed = await confirmDialog(
 		t('sclrit', 'Remove protection'),
@@ -165,11 +189,15 @@ async function unprotectNodes(nodes: Node[]): Promise<(boolean | null)[]> {
 	return results
 }
 
+/**
+ *
+ * @param nodes
+ * @param view
+ */
 function actionableFiles(nodes: Node[], view: View): boolean {
 	return !HIDDEN_VIEWS.includes(view.id)
 		&& nodes.length > 0
-		&& nodes.every((node) =>
-			node.type === FileType.File
+		&& nodes.every((node) => node.type === FileType.File
 			&& (node.permissions & Permission.UPDATE) !== 0)
 }
 

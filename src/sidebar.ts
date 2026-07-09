@@ -1,3 +1,6 @@
+import type { Node } from '@nextcloud/files'
+
+import { translate as t } from '@nextcloud/l10n'
 /**
  * SPDX-License-Identifier: AGPL-3.0-or-later
  *
@@ -5,8 +8,6 @@
  * sidebar API (OCA.Files.Sidebar).
  */
 import Vue from 'vue'
-import { translate as t } from '@nextcloud/l10n'
-import type { Node } from '@nextcloud/files'
 import SecloreTab from './components/SecloreTab.vue'
 import { lockSvg } from './icons'
 
@@ -18,11 +19,18 @@ interface FilesSidebar {
 	Tab: new (options: object) => unknown
 }
 
-const getSidebar = (): FilesSidebar | null =>
-	(window as unknown as { OCA?: { Files?: { Sidebar?: FilesSidebar } } }).OCA?.Files?.Sidebar ?? null
+/**
+ *
+ */
+function getSidebar(): FilesSidebar | null {
+	return (window as unknown as { OCA?: { Files?: { Sidebar?: FilesSidebar } } }).OCA?.Files?.Sidebar ?? null
+}
 
 export const TAB_ID = 'sclrit'
 
+/**
+ *
+ */
 export function registerSecloreSidebarTab(): void {
 	window.addEventListener('DOMContentLoaded', () => {
 		const sidebar = getSidebar()
@@ -58,7 +66,11 @@ export function registerSecloreSidebarTab(): void {
 	})
 }
 
-/** Open the sidebar for a node with the Seclore tab active. */
+/**
+ * Open the sidebar for a node with the Seclore tab active.
+ *
+ * @param node
+ */
 export function openSecloreTab(node: Node): void {
 	const sidebar = getSidebar()
 	if (sidebar === null) {
