@@ -68,6 +68,24 @@ class SecloreStateMapper extends QBMapper {
 	}
 
 	/**
+	 * Most recently updated rows, optionally filtered by status — for
+	 * `occ files_seclore:status` (SDD §4.4).
+	 *
+	 * @return SecloreState[]
+	 */
+	public function findForOverview(?string $status = null, int $limit = 500): array {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('*')
+			->from($this->getTableName())
+			->orderBy('updated_at', 'DESC')
+			->setMaxResults($limit);
+		if ($status !== null) {
+			$qb->where($qb->expr()->eq('status', $qb->createNamedParameter($status)));
+		}
+		return $this->findEntities($qb);
+	}
+
+	/**
 	 * A batch of rows with id >= $minId, ordered by id — cursor-based paging
 	 * for the orphan sweep (SDD §6.1).
 	 *

@@ -12,7 +12,7 @@ Feature-complete for the core protect/unprotect flow — **pending reconciliatio
 - [x] `ISecloreClient` adapter interface + HTTP implementation against the **verified Seclore DRM tenant API 1.0** (SDD §7.3.1; on-premises Policy Server deployments still need reconciling, SDD §15 Q1)
 - [x] Token caching (`TokenStore`), admin-maintained policy list (`PolicyService`, SDD §15 Q1a), typed config (`ConfigService`)
 - [x] Database schema (`oc_seclore_state`) + entity/mapper
-- [x] `occ files_seclore:test` connection check
+- [x] `occ` commands (SDD §4.4): `test` health check, `protect` (recursive batch), `status --failed` triage
 - [x] `ProtectionService` orchestration (SDD §4.1): ETag compare-and-swap, version purge, files-metadata projection, state machine
 - [x] OCS API (SDD §4.3): protect/unprotect/retry/status/policies, admin config + test-connection, capability
 - [x] Background jobs for large files (SDD §4.2) + stale-state watchdog (SDD §9 E14)
@@ -61,6 +61,15 @@ occ files_seclore:test
 ```
 
 All configuration keys and defaults are documented in SDD Appendix A.
+
+## occ commands
+
+```sh
+occ files_seclore:test                                    # connectivity + credentials health check (exit code for monitoring)
+occ files_seclore:protect --user <uid> [--policy <id>] [--recursive] <path>
+                                                          # protect a file or folder tree, synchronously, one result line per file
+occ files_seclore:status [--failed] [--limit <n>]         # tabular dump of protection states for triage
+```
 
 ## License
 

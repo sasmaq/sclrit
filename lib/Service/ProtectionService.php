@@ -81,16 +81,18 @@ final class ProtectionService {
 	 * Protect a file on demand. Runs synchronously when the file size is at
 	 * most sync_max_size, otherwise enqueues a ProtectJob (SDD §4.2).
 	 *
+	 * @param bool $forceSync run inline regardless of size — for occ batch use
+	 *                        (SDD §4.4), where there is no request timeout
 	 * @throws NotFoundException|ProtectionException|SecloreApiException
 	 */
-	public function requestProtect(string $userId, int $fileId, ?string $hotFolderId = null): ProtectionState {
+	public function requestProtect(string $userId, int $fileId, ?string $hotFolderId = null, bool $forceSync = false): ProtectionState {
 		$file = $this->resolveFile($userId, $fileId);
 		$this->authorizeProtect($userId, $file);
 		$policy = $this->resolvePolicy($hotFolderId);
 
 		$state = $this->claimForProtect($userId, $fileId, $policy);
 
-		if ($file->getSize() <= $this->config->getSyncMaxSize()) {
+		if ($forceSync || $file->getSize() <= $this->config->getSyncMaxSize()) {
 			return $this->executeProtect($state, $userId);
 		}
 

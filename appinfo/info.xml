@@ -35,6 +35,8 @@ Protection is performed by your organisation's Seclore Policy Server. The protec
 	</repair-steps>
 	<commands>
 		<command>OCA\FilesSeclore\Command\TestConnection</command>
+		<command>OCA\FilesSeclore\Command\Protect</command>
+		<command>OCA\FilesSeclore\Command\Status</command>
 	</commands>
 	<settings>
 		<admin>OCA\FilesSeclore\Settings\AdminSettings</admin>
