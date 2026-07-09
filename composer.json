@@ -7,11 +7,17 @@
         "php": ">=8.1"
     },
     "require-dev": {
-        "nextcloud/ocp": "dev-stable31"
+        "nextcloud/ocp": "dev-stable31",
+        "phpunit/phpunit": "^10.5"
     },
     "autoload": {
         "psr-4": {
             "OCA\\FilesSeclore\\": "lib/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "OCA\\FilesSeclore\\Tests\\": "tests/"
         }
     },
     "config": {
@@ -22,6 +28,7 @@
         "sort-packages": true
     },
     "scripts": {
-        "lint": "find lib -name '*.php' -print0 | xargs -0 -n1 php -l"
+        "lint": "find lib -name '*.php' -print0 | xargs -0 -n1 php -l",
+        "test:unit": "phpunit --colors=always -c tests/phpunit.xml"
     }
 }
