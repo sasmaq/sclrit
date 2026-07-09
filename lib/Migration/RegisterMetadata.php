@@ -6,9 +6,9 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\FilesSeclore\Migration;
+namespace OCA\Sclrit\Migration;
 
-use OCA\FilesSeclore\Service\ProtectionService;
+use OCA\Sclrit\Service\ProtectionService;
 use OCP\FilesMetadata\IFilesMetadataManager;
 use OCP\FilesMetadata\Model\IMetadataValueWrapper;
 use OCP\Migration\IOutput;

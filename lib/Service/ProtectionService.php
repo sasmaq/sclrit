@@ -6,27 +6,27 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\FilesSeclore\Service;
+namespace OCA\Sclrit\Service;
 
-use OCA\FilesSeclore\Activity\ActivityPublisher;
-use OCA\FilesSeclore\AppInfo\Application;
-use OCA\FilesSeclore\BackgroundJob\ProtectJob;
-use OCA\FilesSeclore\BackgroundJob\UnprotectJob;
-use OCA\FilesSeclore\Db\SecloreState;
-use OCA\FilesSeclore\Db\SecloreStateMapper;
-use OCA\FilesSeclore\Exceptions\AlreadyProtectedException;
-use OCA\FilesSeclore\Exceptions\ConflictException;
-use OCA\FilesSeclore\Exceptions\InProgressException;
-use OCA\FilesSeclore\Exceptions\NotAllowedException;
-use OCA\FilesSeclore\Exceptions\NotConfiguredException;
-use OCA\FilesSeclore\Exceptions\NotProtectedException;
-use OCA\FilesSeclore\Exceptions\PolicyNotFoundException;
-use OCA\FilesSeclore\Exceptions\ProtectionException;
-use OCA\FilesSeclore\Exceptions\SecloreApiException;
-use OCA\FilesSeclore\Exceptions\UnsupportedFileException;
-use OCA\FilesSeclore\Notification\Notifier;
-use OCA\FilesSeclore\Service\Dto\HotFolder;
-use OCA\FilesSeclore\Service\Dto\ProtectionState;
+use OCA\Sclrit\Activity\ActivityPublisher;
+use OCA\Sclrit\AppInfo\Application;
+use OCA\Sclrit\BackgroundJob\ProtectJob;
+use OCA\Sclrit\BackgroundJob\UnprotectJob;
+use OCA\Sclrit\Db\SecloreState;
+use OCA\Sclrit\Db\SecloreStateMapper;
+use OCA\Sclrit\Exceptions\AlreadyProtectedException;
+use OCA\Sclrit\Exceptions\ConflictException;
+use OCA\Sclrit\Exceptions\InProgressException;
+use OCA\Sclrit\Exceptions\NotAllowedException;
+use OCA\Sclrit\Exceptions\NotConfiguredException;
+use OCA\Sclrit\Exceptions\NotProtectedException;
+use OCA\Sclrit\Exceptions\PolicyNotFoundException;
+use OCA\Sclrit\Exceptions\ProtectionException;
+use OCA\Sclrit\Exceptions\SecloreApiException;
+use OCA\Sclrit\Exceptions\UnsupportedFileException;
+use OCA\Sclrit\Notification\Notifier;
+use OCA\Sclrit\Service\Dto\HotFolder;
+use OCA\Sclrit\Service\Dto\ProtectionState;
 use OCP\AppFramework\Db\DoesNotExistException;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\IJobList;
@@ -53,7 +53,7 @@ use Psr\Log\LoggerInterface;
  */
 final class ProtectionService {
 	/** Files-metadata key projecting "is protected" into WebDAV PROPFIND (SDD §4.5). */
-	public const METADATA_KEY = 'files_seclore-protected';
+	public const METADATA_KEY = 'sclrit-protected';
 
 	private const MAX_ATTEMPTS = 3;
 	private const RETRY_BACKOFF_S = 300;

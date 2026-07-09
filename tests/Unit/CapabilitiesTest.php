@@ -6,15 +6,15 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\FilesSeclore\Tests\Unit;
+namespace OCA\Sclrit\Tests\Unit;
 
-use OCA\FilesSeclore\Activity\ActivityPublisher;
-use OCA\FilesSeclore\Capabilities;
-use OCA\FilesSeclore\Db\SecloreStateMapper;
-use OCA\FilesSeclore\Service\ConfigService;
-use OCA\FilesSeclore\Service\ISecloreClient;
-use OCA\FilesSeclore\Service\PolicyService;
-use OCA\FilesSeclore\Service\ProtectionService;
+use OCA\Sclrit\Activity\ActivityPublisher;
+use OCA\Sclrit\Capabilities;
+use OCA\Sclrit\Db\SecloreStateMapper;
+use OCA\Sclrit\Service\ConfigService;
+use OCA\Sclrit\Service\ISecloreClient;
+use OCA\Sclrit\Service\PolicyService;
+use OCA\Sclrit\Service\ProtectionService;
 use OCP\Activity\IManager as IActivityManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\IJobList;
@@ -81,7 +81,7 @@ class CapabilitiesTest extends TestCase {
 		$capabilities = $this->newCapabilities([])->getCapabilities();
 
 		$this->assertSame([
-			'files_seclore' => [
+			'sclrit' => [
 				'enabled' => false,
 				'canProtect' => false,
 				'canUnprotect' => false,
@@ -98,7 +98,7 @@ class CapabilitiesTest extends TestCase {
 		])->getCapabilities();
 
 		$this->assertSame([
-			'files_seclore' => [
+			'sclrit' => [
 				'enabled' => true,
 				'canProtect' => true,
 				'canUnprotect' => true,
@@ -110,9 +110,9 @@ class CapabilitiesTest extends TestCase {
 	public function testNoPermissionsWithoutASessionUser(): void {
 		$capabilities = $this->newCapabilities(self::configuredValues(), userId: null)->getCapabilities();
 
-		$this->assertTrue($capabilities['files_seclore']['enabled']);
-		$this->assertFalse($capabilities['files_seclore']['canProtect']);
-		$this->assertFalse($capabilities['files_seclore']['canUnprotect']);
+		$this->assertTrue($capabilities['sclrit']['enabled']);
+		$this->assertFalse($capabilities['sclrit']['canProtect']);
+		$this->assertFalse($capabilities['sclrit']['canUnprotect']);
 	}
 
 	public function testCanProtectHonoursAllowedGroups(): void {
@@ -120,6 +120,6 @@ class CapabilitiesTest extends TestCase {
 			ConfigService::KEY_ALLOWED_GROUPS => '["drm-users"]',
 		])->getCapabilities();
 
-		$this->assertFalse($capabilities['files_seclore']['canProtect']);
+		$this->assertFalse($capabilities['sclrit']['canProtect']);
 	}
 }

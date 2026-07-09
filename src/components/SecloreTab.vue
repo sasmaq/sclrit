@@ -15,14 +15,14 @@
 		<template v-else-if="state">
 			<!-- none -->
 			<NcEmptyContent v-if="state.status === 'none'"
-				:name="t('files_seclore', 'Not protected')"
-				:description="t('files_seclore', 'This file has no Seclore protection.')">
+				:name="t('sclrit', 'Not protected')"
+				:description="t('sclrit', 'This file has no Seclore protection.')">
 				<template #icon>
 					<span class="seclore-tab__icon" v-html="lockOpenSvg" /><!-- eslint-disable-line vue/no-v-html -->
 				</template>
 				<template #action>
 					<NcButton v-if="canProtect" type="primary" :disabled="busy" @click="protect">
-						{{ t('files_seclore', 'Protect with Seclore') }}
+						{{ t('sclrit', 'Protect with Seclore') }}
 					</NcButton>
 				</template>
 			</NcEmptyContent>
@@ -35,43 +35,43 @@
 			<!-- protected / failed -->
 			<template v-else>
 				<NcNoteCard v-if="state.status === 'failed'" type="error">
-					{{ state.error || t('files_seclore', 'The last request failed.') }}
+					{{ state.error || t('sclrit', 'The last request failed.') }}
 				</NcNoteCard>
 				<NcNoteCard v-else-if="state.error" type="warning">
 					{{ state.error }}
 				</NcNoteCard>
 				<NcNoteCard v-else type="success">
-					{{ t('files_seclore', 'This file is protected with Seclore.') }}
+					{{ t('sclrit', 'This file is protected with Seclore.') }}
 				</NcNoteCard>
 
 				<dl class="seclore-tab__details">
 					<template v-if="state.policyName || state.hotFolderId">
-						<dt>{{ t('files_seclore', 'Policy') }}</dt>
+						<dt>{{ t('sclrit', 'Policy') }}</dt>
 						<dd>{{ state.policyName || state.hotFolderId }}</dd>
 					</template>
 					<template v-if="state.requestedBy">
-						<dt>{{ t('files_seclore', 'Requested by') }}</dt>
+						<dt>{{ t('sclrit', 'Requested by') }}</dt>
 						<dd>{{ state.requestedBy }}</dd>
 					</template>
 					<template v-if="state.updatedAt">
-						<dt>{{ t('files_seclore', 'Last change') }}</dt>
+						<dt>{{ t('sclrit', 'Last change') }}</dt>
 						<dd>{{ formatTime(state.updatedAt) }}</dd>
 					</template>
 					<template v-if="state.secloreFileId">
-						<dt>{{ t('files_seclore', 'Seclore file ID') }}</dt>
+						<dt>{{ t('sclrit', 'Seclore file ID') }}</dt>
 						<dd>{{ state.secloreFileId }}</dd>
 					</template>
 				</dl>
 
 				<div class="seclore-tab__actions">
 					<NcButton v-if="state.status === 'failed'" type="primary" :disabled="busy" @click="retry">
-						{{ t('files_seclore', 'Retry') }}
+						{{ t('sclrit', 'Retry') }}
 					</NcButton>
 					<NcButton v-if="state.status === 'protected' && canUnprotect"
 						type="error"
 						:disabled="busy"
 						@click="unprotect">
-						{{ t('files_seclore', 'Remove protection') }}
+						{{ t('sclrit', 'Remove protection') }}
 					</NcButton>
 				</div>
 			</template>
@@ -131,7 +131,7 @@ export default Vue.extend({
 
 	computed: {
 		capabilities(): SecloreCapabilities {
-			return ((getCapabilities() as Record<string, unknown>).files_seclore ?? {}) as SecloreCapabilities
+			return ((getCapabilities() as Record<string, unknown>).sclrit ?? {}) as SecloreCapabilities
 		},
 
 		updatable(): boolean {
@@ -148,8 +148,8 @@ export default Vue.extend({
 
 		inFlightText(): string {
 			return this.state?.status === 'pending'
-				? t('files_seclore', 'Queued — you will be notified when the operation completes.')
-				: t('files_seclore', 'Being processed by the Seclore Policy Server…')
+				? t('sclrit', 'Queued — you will be notified when the operation completes.')
+				: t('sclrit', 'Being processed by the Seclore Policy Server…')
 		},
 	},
 
@@ -197,9 +197,9 @@ export default Vue.extend({
 			try {
 				const state = await protectFile(fileId, policyId)
 				if (state.status === 'pending') {
-					showInfo(t('files_seclore', 'Protection queued — you will be notified.'))
+					showInfo(t('sclrit', 'Protection queued — you will be notified.'))
 				} else {
-					showSuccess(t('files_seclore', 'File protected with Seclore.'))
+					showSuccess(t('sclrit', 'File protected with Seclore.'))
 				}
 			} catch (error) {
 				showError(ocsErrorMessage(error))
@@ -216,7 +216,7 @@ export default Vue.extend({
 			this.busy = true
 			try {
 				await retryFile(this.fileInfo.id)
-				showInfo(t('files_seclore', 'Protection restarted.'))
+				showInfo(t('sclrit', 'Protection restarted.'))
 			} catch (error) {
 				showError(ocsErrorMessage(error))
 			} finally {
@@ -231,9 +231,9 @@ export default Vue.extend({
 			}
 			const fileId = this.fileInfo.id
 			const confirmed = await confirmDialog(
-				t('files_seclore', 'Remove protection'),
-				t('files_seclore', 'Remove Seclore protection from "{file}"? The file content will no longer be rights-protected. This action is audited.', { file: this.fileInfo.name }),
-				t('files_seclore', 'Remove protection'),
+				t('sclrit', 'Remove protection'),
+				t('sclrit', 'Remove Seclore protection from "{file}"? The file content will no longer be rights-protected. This action is audited.', { file: this.fileInfo.name }),
+				t('sclrit', 'Remove protection'),
 			)
 			if (!confirmed) {
 				return
@@ -242,9 +242,9 @@ export default Vue.extend({
 			try {
 				const state = await unprotectFile(fileId)
 				if (state.status === 'pending') {
-					showInfo(t('files_seclore', 'Unprotection queued — you will be notified.'))
+					showInfo(t('sclrit', 'Unprotection queued — you will be notified.'))
 				} else {
-					showSuccess(t('files_seclore', 'Seclore protection removed.'))
+					showSuccess(t('sclrit', 'Seclore protection removed.'))
 				}
 			} catch (error) {
 				showError(ocsErrorMessage(error))

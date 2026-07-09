@@ -1,4 +1,4 @@
-# Seclore File Protection for Nextcloud (`files_seclore`)
+# Seclore File Protection for Nextcloud (`sclrit`)
 
 Protect files on demand with [Seclore](https://www.seclore.com) Enterprise Digital Rights Management, directly from Nextcloud. Protection is performed by your organisation's Seclore Policy Server; the protected file replaces the original in place, so shares and sync keep working while Seclore enforces usage rights wherever the file travels.
 
@@ -25,7 +25,7 @@ Feature-complete for the core protect/unprotect flow — **pending reconciliatio
 
 ```sh
 npm ci
-npm run build     # outputs js/files_seclore-main.mjs
+npm run build     # outputs js/sclrit-main.mjs
 ```
 
 ## Requirements
@@ -38,8 +38,8 @@ npm run build     # outputs js/files_seclore-main.mjs
 The repository root is the app root. Link it into your Nextcloud dev instance under the app id:
 
 ```sh
-ln -s /path/to/sclrit /path/to/nextcloud/apps/files_seclore
-occ app:enable files_seclore
+ln -s /path/to/sclrit /path/to/nextcloud/apps/sclrit
+occ app:enable sclrit
 ```
 
 ## Configuration
@@ -47,17 +47,17 @@ occ app:enable files_seclore
 Configure in the web UI under **Administration settings → Security → Seclore File Protection** (connection, default policy, group gates, thresholds, connection test), or via `occ`:
 
 ```sh
-occ config:app:set files_seclore base_url --value="https://api.seclore.example.com"
-occ config:app:set files_seclore app_id --value="<tenant id>"
-occ config:app:set files_seclore app_secret --sensitive --value="<tenant secret>"
+occ config:app:set sclrit base_url --value="https://api.seclore.example.com"
+occ config:app:set sclrit app_id --value="<tenant id>"
+occ config:app:set sclrit app_secret --sensitive --value="<tenant secret>"
 # The Seclore API has no Hot Folder listing — configure the offered policies:
-occ config:app:set files_seclore policies --value='[{"id":"12345","name":"Confidential"}]'
+occ config:app:set sclrit policies --value='[{"id":"12345","name":"Confidential"}]'
 ```
 
 Then verify connectivity and credentials:
 
 ```sh
-occ files_seclore:test
+occ sclrit:test
 ```
 
 All configuration keys and defaults are documented in SDD Appendix A.
@@ -65,10 +65,10 @@ All configuration keys and defaults are documented in SDD Appendix A.
 ## occ commands
 
 ```sh
-occ files_seclore:test                                    # connectivity + credentials health check (exit code for monitoring)
-occ files_seclore:protect --user <uid> [--policy <id>] [--recursive] <path>
+occ sclrit:test                                    # connectivity + credentials health check (exit code for monitoring)
+occ sclrit:protect --user <uid> [--policy <id>] [--recursive] <path>
                                                           # protect a file or folder tree, synchronously, one result line per file
-occ files_seclore:status [--failed] [--limit <n>]         # tabular dump of protection states for triage
+occ sclrit:status [--failed] [--limit <n>]         # tabular dump of protection states for triage
 ```
 
 ## License

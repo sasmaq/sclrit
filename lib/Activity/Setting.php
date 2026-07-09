@@ -6,7 +6,7 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\FilesSeclore\Activity;
+namespace OCA\Sclrit\Activity;
 
 use OCP\Activity\ActivitySettings;
 use OCP\IL10N;

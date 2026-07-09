@@ -6,26 +6,26 @@
   Emits `close` with the chosen policy id, or without payload on cancel.
 -->
 <template>
-	<NcDialog :name="t('files_seclore', 'Protect with Seclore')"
+	<NcDialog :name="t('sclrit', 'Protect with Seclore')"
 		size="small"
 		@update:open="onOpenChanged">
 		<div class="policy-picker">
 			<p class="policy-picker__hint">
-				{{ t('files_seclore', 'The chosen policy travels with the file and is enforced by Seclore wherever it goes.') }}
+				{{ t('sclrit', 'The chosen policy travels with the file and is enforced by Seclore wherever it goes.') }}
 			</p>
 			<NcSelect v-model="selected"
 				class="policy-picker__select"
 				:options="policies"
 				label="name"
 				:clearable="false"
-				:aria-label-combobox="t('files_seclore', 'Protection policy')" />
+				:aria-label-combobox="t('sclrit', 'Protection policy')" />
 			<p v-if="selected && selected.description" class="policy-picker__description">
 				{{ selected.description }}
 			</p>
 		</div>
 		<template #actions>
 			<NcButton @click="cancel">
-				{{ t('files_seclore', 'Cancel') }}
+				{{ t('sclrit', 'Cancel') }}
 			</NcButton>
 			<NcButton type="primary" :disabled="!selected" @click="confirm">
 				{{ confirmLabel }}
@@ -75,7 +75,7 @@ export default defineComponent({
 
 	computed: {
 		confirmLabel(): string {
-			return n('files_seclore', 'Protect %n file', 'Protect %n files', this.fileCount)
+			return n('sclrit', 'Protect %n file', 'Protect %n files', this.fileCount)
 		},
 	},
 

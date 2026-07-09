@@ -8,4 +8,4 @@ import AdminSettings from './components/AdminSettings.vue'
 import '@nextcloud/dialogs/style.css'
 
 const View = Vue.extend(AdminSettings)
-new View().$mount('#files_seclore-admin')
+new View().$mount('#sclrit-admin')

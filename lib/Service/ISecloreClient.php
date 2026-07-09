@@ -6,18 +6,18 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\FilesSeclore\Service;
+namespace OCA\Sclrit\Service;
 
-use OCA\FilesSeclore\Exceptions\FileTooLargeException;
-use OCA\FilesSeclore\Exceptions\NotConfiguredException;
-use OCA\FilesSeclore\Exceptions\PolicyNotFoundException;
-use OCA\FilesSeclore\Exceptions\SecloreApiException;
-use OCA\FilesSeclore\Exceptions\SecloreAuthException;
-use OCA\FilesSeclore\Exceptions\SecloreUnavailableException;
-use OCA\FilesSeclore\Service\Dto\ConnectionResult;
-use OCA\FilesSeclore\Service\Dto\Credentials;
-use OCA\FilesSeclore\Service\Dto\ProtectResult;
-use OCA\FilesSeclore\Service\Dto\SecloreFileInfo;
+use OCA\Sclrit\Exceptions\FileTooLargeException;
+use OCA\Sclrit\Exceptions\NotConfiguredException;
+use OCA\Sclrit\Exceptions\PolicyNotFoundException;
+use OCA\Sclrit\Exceptions\SecloreApiException;
+use OCA\Sclrit\Exceptions\SecloreAuthException;
+use OCA\Sclrit\Exceptions\SecloreUnavailableException;
+use OCA\Sclrit\Service\Dto\ConnectionResult;
+use OCA\Sclrit\Service\Dto\Credentials;
+use OCA\Sclrit\Service\Dto\ProtectResult;
+use OCA\Sclrit\Service\Dto\SecloreFileInfo;
 
 /**
  * Adapter for the Seclore REST API (SDD §7).

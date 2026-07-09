@@ -6,19 +6,19 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\FilesSeclore\Controller;
+namespace OCA\Sclrit\Controller;
 
-use OCA\FilesSeclore\Exceptions\FileTooLargeException;
-use OCA\FilesSeclore\Exceptions\NotConfiguredException;
-use OCA\FilesSeclore\Exceptions\PolicyNotFoundException;
-use OCA\FilesSeclore\Exceptions\ProtectionException;
-use OCA\FilesSeclore\Exceptions\SecloreApiException;
-use OCA\FilesSeclore\Exceptions\SecloreUnavailableException;
-use OCA\FilesSeclore\Service\ConfigService;
-use OCA\FilesSeclore\Service\Dto\HotFolder;
-use OCA\FilesSeclore\Service\Dto\ProtectionState;
-use OCA\FilesSeclore\Service\PolicyService;
-use OCA\FilesSeclore\Service\ProtectionService;
+use OCA\Sclrit\Exceptions\FileTooLargeException;
+use OCA\Sclrit\Exceptions\NotConfiguredException;
+use OCA\Sclrit\Exceptions\PolicyNotFoundException;
+use OCA\Sclrit\Exceptions\ProtectionException;
+use OCA\Sclrit\Exceptions\SecloreApiException;
+use OCA\Sclrit\Exceptions\SecloreUnavailableException;
+use OCA\Sclrit\Service\ConfigService;
+use OCA\Sclrit\Service\Dto\HotFolder;
+use OCA\Sclrit\Service\Dto\ProtectionState;
+use OCA\Sclrit\Service\PolicyService;
+use OCA\Sclrit\Service\ProtectionService;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\ApiRoute;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;

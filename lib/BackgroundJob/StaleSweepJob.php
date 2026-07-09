@@ -6,12 +6,12 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\FilesSeclore\BackgroundJob;
+namespace OCA\Sclrit\BackgroundJob;
 
-use OCA\FilesSeclore\AppInfo\Application;
-use OCA\FilesSeclore\Db\SecloreState;
-use OCA\FilesSeclore\Db\SecloreStateMapper;
-use OCA\FilesSeclore\Service\ConfigService;
+use OCA\Sclrit\AppInfo\Application;
+use OCA\Sclrit\Db\SecloreState;
+use OCA\Sclrit\Db\SecloreStateMapper;
+use OCA\Sclrit\Service\ConfigService;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\TimedJob;
 use OCP\Files\Config\IUserMountCache;

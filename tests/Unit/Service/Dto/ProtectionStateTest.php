@@ -6,10 +6,10 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\FilesSeclore\Tests\Unit\Service\Dto;
+namespace OCA\Sclrit\Tests\Unit\Service\Dto;
 
-use OCA\FilesSeclore\Db\SecloreState;
-use OCA\FilesSeclore\Service\Dto\ProtectionState;
+use OCA\Sclrit\Db\SecloreState;
+use OCA\Sclrit\Service\Dto\ProtectionState;
 use PHPUnit\Framework\TestCase;
 
 class ProtectionStateTest extends TestCase {

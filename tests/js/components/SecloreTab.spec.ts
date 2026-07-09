@@ -12,7 +12,7 @@ import { confirmDialog, pickPolicy } from '../../../src/dialogs'
 const capabilities = vi.hoisted(() => ({ value: {} as Record<string, unknown> }))
 
 vi.mock('@nextcloud/capabilities', () => ({
-	getCapabilities: () => ({ files_seclore: capabilities.value }),
+	getCapabilities: () => ({ sclrit: capabilities.value }),
 }))
 
 vi.mock('@nextcloud/dialogs', () => ({

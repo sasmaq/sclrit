@@ -6,9 +6,9 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\FilesSeclore\Notification;
+namespace OCA\Sclrit\Notification;
 
-use OCA\FilesSeclore\AppInfo\Application;
+use OCA\Sclrit\AppInfo\Application;
 use OCP\IURLGenerator;
 use OCP\L10N\IFactory;
 use OCP\Notification\INotification;

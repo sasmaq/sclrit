@@ -6,18 +6,18 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\FilesSeclore\Service;
+namespace OCA\Sclrit\Service;
 
-use OCA\FilesSeclore\AppInfo\Application;
-use OCA\FilesSeclore\Service\Dto\Credentials;
-use OCA\FilesSeclore\Service\Dto\HotFolder;
+use OCA\Sclrit\AppInfo\Application;
+use OCA\Sclrit\Service\Dto\Credentials;
+use OCA\Sclrit\Service\Dto\HotFolder;
 use OCP\IAppConfig;
 
 /**
  * Typed access to the app configuration (SDD Appendix A).
  *
  * Until the admin settings UI lands, values are set via:
- *   occ config:app:set files_seclore <key> --value=<value> [--sensitive]
+ *   occ config:app:set sclrit <key> --value=<value> [--sensitive]
  */
 final class ConfigService {
 	public const KEY_BASE_URL = 'base_url';

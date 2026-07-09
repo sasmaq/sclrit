@@ -6,16 +6,16 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\FilesSeclore\Tests\Unit\Service;
+namespace OCA\Sclrit\Tests\Unit\Service;
 
-use OCA\FilesSeclore\Service\ConfigService;
-use OCA\FilesSeclore\Service\Dto\Credentials;
-use OCA\FilesSeclore\Service\SecloreClient;
-use OCA\FilesSeclore\Service\TokenStore;
-use OCA\FilesSeclore\Exceptions\FileTooLargeException;
-use OCA\FilesSeclore\Exceptions\PolicyNotFoundException;
-use OCA\FilesSeclore\Exceptions\SecloreApiException;
-use OCA\FilesSeclore\Tests\Unit\AppConfigMockTrait;
+use OCA\Sclrit\Service\ConfigService;
+use OCA\Sclrit\Service\Dto\Credentials;
+use OCA\Sclrit\Service\SecloreClient;
+use OCA\Sclrit\Service\TokenStore;
+use OCA\Sclrit\Exceptions\FileTooLargeException;
+use OCA\Sclrit\Exceptions\PolicyNotFoundException;
+use OCA\Sclrit\Exceptions\SecloreApiException;
+use OCA\Sclrit\Tests\Unit\AppConfigMockTrait;
 use OCP\Http\Client\IClient;
 use OCP\Http\Client\IClientService;
 use OCP\Http\Client\IResponse;

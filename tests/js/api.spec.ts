@@ -49,7 +49,7 @@ describe('protectFile', () => {
 		const result = await api.protectFile(42, 'hf-1')
 
 		expect(axios.post).toHaveBeenCalledWith(
-			'/ocs/v2.php/apps/files_seclore/api/v1/protect',
+			'/ocs/v2.php/apps/sclrit/api/v1/protect',
 			{ fileId: 42, hotFolderId: 'hf-1' },
 		)
 		expect(result).toMatchObject({ fileId: 42, status: 'protected' })
@@ -72,14 +72,14 @@ describe('unprotectFile / retryFile', () => {
 
 		expect(await api.unprotectFile(7)).toMatchObject({ fileId: 7, status: 'none' })
 		expect(axios.post).toHaveBeenLastCalledWith(
-			'/ocs/v2.php/apps/files_seclore/api/v1/unprotect',
+			'/ocs/v2.php/apps/sclrit/api/v1/unprotect',
 			{ fileId: 7 },
 		)
 
 		axios.post.mockResolvedValue(ocsResponse({ state: state(7, 'pending') }))
 		expect(await api.retryFile(7)).toMatchObject({ status: 'pending' })
 		expect(axios.post).toHaveBeenLastCalledWith(
-			'/ocs/v2.php/apps/files_seclore/api/v1/retry',
+			'/ocs/v2.php/apps/sclrit/api/v1/retry',
 			{ fileId: 7 },
 		)
 	})
@@ -92,7 +92,7 @@ describe('fetchStates', () => {
 		const states = await api.fetchStates([1, 2])
 
 		expect(axios.get).toHaveBeenCalledWith(
-			'/ocs/v2.php/apps/files_seclore/api/v1/status',
+			'/ocs/v2.php/apps/sclrit/api/v1/status',
 			{ params: { fileIds: [1, 2] } },
 		)
 		expect(states).toHaveProperty('1')
@@ -136,7 +136,7 @@ describe('admin endpoints', () => {
 		const result = await api.saveAdminConfig({ baseUrl: 'https://drm.example.com' })
 
 		expect(axios.put).toHaveBeenCalledWith(
-			'/ocs/v2.php/apps/files_seclore/api/v1/admin/config',
+			'/ocs/v2.php/apps/sclrit/api/v1/admin/config',
 			{ baseUrl: 'https://drm.example.com' },
 		)
 		expect(result).toMatchObject({ baseUrl: 'https://drm.example.com' })
@@ -148,7 +148,7 @@ describe('admin endpoints', () => {
 		const result = await api.testConnection({ baseUrl: 'https://x', appId: 'a', appSecret: 's', verifyTls: false })
 
 		expect(axios.post).toHaveBeenCalledWith(
-			'/ocs/v2.php/apps/files_seclore/api/v1/admin/test-connection',
+			'/ocs/v2.php/apps/sclrit/api/v1/admin/test-connection',
 			{ baseUrl: 'https://x', appId: 'a', appSecret: 's', verifyTls: false },
 		)
 		expect(result.ok).toBe(true)

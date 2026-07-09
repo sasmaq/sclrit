@@ -6,13 +6,13 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\FilesSeclore\Controller;
+namespace OCA\Sclrit\Controller;
 
-use OCA\FilesSeclore\Service\ConfigService;
-use OCA\FilesSeclore\Service\Dto\Credentials;
-use OCA\FilesSeclore\Service\Dto\HotFolder;
-use OCA\FilesSeclore\Service\ISecloreClient;
-use OCA\FilesSeclore\Service\TokenStore;
+use OCA\Sclrit\Service\ConfigService;
+use OCA\Sclrit\Service\Dto\Credentials;
+use OCA\Sclrit\Service\Dto\HotFolder;
+use OCA\Sclrit\Service\ISecloreClient;
+use OCA\Sclrit\Service\TokenStore;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\ApiRoute;
 use OCP\AppFramework\Http\Attribute\PasswordConfirmationRequired;

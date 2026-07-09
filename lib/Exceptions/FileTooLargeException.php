@@ -6,7 +6,7 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\FilesSeclore\Exceptions;
+namespace OCA\Sclrit\Exceptions;
 
 /** The Policy Server rejected the file for exceeding its size limit (SDD §15 Q4). */
 class FileTooLargeException extends SecloreApiException {

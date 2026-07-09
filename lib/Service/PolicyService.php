@@ -6,9 +6,9 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\FilesSeclore\Service;
+namespace OCA\Sclrit\Service;
 
-use OCA\FilesSeclore\Service\Dto\HotFolder;
+use OCA\Sclrit\Service\Dto\HotFolder;
 
 /**
  * The protection policies (Hot Folders) offered to users.

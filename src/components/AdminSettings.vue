@@ -7,9 +7,9 @@
 -->
 <template>
 	<div class="seclore-admin">
-		<NcSettingsSection :name="t('files_seclore', 'Seclore File Protection')"
-			:description="t('files_seclore', 'Protect files on demand with Seclore Enterprise DRM. Protecting a file transmits its content to the Policy Server configured below.')"
-			doc-url="https://github.com/nextcloud/files_seclore">
+		<NcSettingsSection :name="t('sclrit', 'Seclore File Protection')"
+			:description="t('sclrit', 'Protect files on demand with Seclore Enterprise DRM. Protecting a file transmits its content to the Policy Server configured below.')"
+			doc-url="https://github.com/nextcloud/sclrit">
 			<NcLoadingIcon v-if="loading" :size="32" />
 			<NcNoteCard v-else-if="loadError" type="error">
 				{{ loadError }}
@@ -18,31 +18,31 @@
 
 		<template v-if="!loading && !loadError">
 			<!-- Connection (SDD §8.1) -->
-			<NcSettingsSection :name="t('files_seclore', 'Policy Server connection')"
-				:description="t('files_seclore', 'Register this app as an enterprise application in the Seclore console and enter its credentials here. The base URL must use HTTPS.')">
+			<NcSettingsSection :name="t('sclrit', 'Policy Server connection')"
+				:description="t('sclrit', 'Register this app as an enterprise application in the Seclore console and enter its credentials here. The base URL must use HTTPS.')">
 				<div class="seclore-admin__form">
 					<NcTextField v-model="form.baseUrl"
-						:label="t('files_seclore', 'Policy Server base URL')"
+						:label="t('sclrit', 'Policy Server base URL')"
 						placeholder="https://policy.example.com/api"
 						type="url" />
 					<NcTextField v-model="form.appId"
-						:label="t('files_seclore', 'Tenant ID')" />
+						:label="t('sclrit', 'Tenant ID')" />
 					<NcPasswordField v-model="appSecret"
-						:label="t('files_seclore', 'Tenant secret')"
-						:placeholder="appSecretSet ? t('files_seclore', '•••• (a secret is saved — leave empty to keep it)') : ''"
+						:label="t('sclrit', 'Tenant secret')"
+						:placeholder="appSecretSet ? t('sclrit', '•••• (a secret is saved — leave empty to keep it)') : ''"
 						autocomplete="new-password" />
 					<NcCheckboxRadioSwitch :checked="form.verifyTls"
 						type="switch"
 						@update:checked="form.verifyTls = $event">
-						{{ t('files_seclore', 'Verify the TLS certificate') }}
+						{{ t('sclrit', 'Verify the TLS certificate') }}
 					</NcCheckboxRadioSwitch>
 					<NcNoteCard v-if="!form.verifyTls" type="warning">
-						{{ t('files_seclore', 'TLS verification is disabled. The connection to the Policy Server is not protected against interception — enable it outside of testing.') }}
+						{{ t('sclrit', 'TLS verification is disabled. The connection to the Policy Server is not protected against interception — enable it outside of testing.') }}
 					</NcNoteCard>
 
 					<div class="seclore-admin__actions">
 						<NcButton :disabled="testing || !form.baseUrl || !form.appId" @click="test">
-							{{ testing ? t('files_seclore', 'Testing…') : t('files_seclore', 'Test connection') }}
+							{{ testing ? t('sclrit', 'Testing…') : t('sclrit', 'Test connection') }}
 						</NcButton>
 					</div>
 					<NcNoteCard v-if="testResult" :type="testResult.ok ? 'success' : 'error'">
@@ -52,66 +52,66 @@
 			</NcSettingsSection>
 
 			<!-- Policies (SDD §15 Q1a: no listing API — admin-maintained) -->
-			<NcSettingsSection :name="t('files_seclore', 'Protection policies')"
-				:description="t('files_seclore', 'The Seclore API does not expose the Hot Folder list, so the policies offered to users are maintained here. Find the Hot Folder IDs in the Seclore admin console.')">
+			<NcSettingsSection :name="t('sclrit', 'Protection policies')"
+				:description="t('sclrit', 'The Seclore API does not expose the Hot Folder list, so the policies offered to users are maintained here. Find the Hot Folder IDs in the Seclore admin console.')">
 				<div class="seclore-admin__form">
 					<div v-for="(policy, index) in form.policies" :key="index" class="seclore-admin__policy">
 						<NcTextField v-model="policy.id"
-							:label="t('files_seclore', 'Hot Folder ID')" />
+							:label="t('sclrit', 'Hot Folder ID')" />
 						<NcTextField v-model="policy.name"
-							:label="t('files_seclore', 'Display name')" />
+							:label="t('sclrit', 'Display name')" />
 						<NcTextField v-model="policy.description"
-							:label="t('files_seclore', 'Description (optional, shown in the picker)')" />
+							:label="t('sclrit', 'Description (optional, shown in the picker)')" />
 						<div>
 							<NcButton type="tertiary" @click="removePolicy(index)">
-								{{ t('files_seclore', 'Remove') }}
+								{{ t('sclrit', 'Remove') }}
 							</NcButton>
 						</div>
 					</div>
 					<div class="seclore-admin__actions">
 						<NcButton @click="addPolicy">
-							{{ t('files_seclore', 'Add policy') }}
+							{{ t('sclrit', 'Add policy') }}
 						</NcButton>
 					</div>
 				</div>
 			</NcSettingsSection>
 
 			<!-- Defaults (SDD Appendix A, decision D7) -->
-			<NcSettingsSection :name="t('files_seclore', 'Protection defaults')"
-				:description="t('files_seclore', 'The default policy is pre-selected in the picker and used by API calls that do not name one.')">
+			<NcSettingsSection :name="t('sclrit', 'Protection defaults')"
+				:description="t('sclrit', 'The default policy is pre-selected in the picker and used by API calls that do not name one.')">
 				<div class="seclore-admin__form">
 					<div class="seclore-admin__field">
-						<label for="seclore-default-policy">{{ t('files_seclore', 'Default policy') }}</label>
+						<label for="seclore-default-policy">{{ t('sclrit', 'Default policy') }}</label>
 						<NcSelect v-model="defaultPolicyModel"
 							input-id="seclore-default-policy"
 							:options="form.policies"
 							label="name"
-							:placeholder="form.policies.length === 0 ? t('files_seclore', 'Add a protection policy above first') : t('files_seclore', 'No default')"
+							:placeholder="form.policies.length === 0 ? t('sclrit', 'Add a protection policy above first') : t('sclrit', 'No default')"
 							:clearable="true" />
 					</div>
 					<NcTextField v-model="form.syncMaxSizeMiB"
-						:label="t('files_seclore', 'Synchronous protection up to (MiB)')"
+						:label="t('sclrit', 'Synchronous protection up to (MiB)')"
 						type="number"
-						:helper-text="t('files_seclore', 'Larger files are protected by a background job and the user is notified on completion.')" />
+						:helper-text="t('sclrit', 'Larger files are protected by a background job and the user is notified on completion.')" />
 					<NcCheckboxRadioSwitch :checked="form.purgeVersions"
 						type="switch"
 						@update:checked="form.purgeVersions = $event">
-						{{ t('files_seclore', 'Delete previous file versions after successful protection') }}
+						{{ t('sclrit', 'Delete previous file versions after successful protection') }}
 					</NcCheckboxRadioSwitch>
 					<NcNoteCard :type="form.purgeVersions ? 'info' : 'warning'">
 						{{ form.purgeVersions
-							? t('files_seclore', 'Pre-protection versions contain the unprotected content; deleting them closes that leak but makes the protection irreversible from Nextcloud alone.')
-							: t('files_seclore', 'Previous versions keep the unprotected content and stay restorable by anyone with access — this defeats the protection for existing files.') }}
+							? t('sclrit', 'Pre-protection versions contain the unprotected content; deleting them closes that leak but makes the protection irreversible from Nextcloud alone.')
+							: t('sclrit', 'Previous versions keep the unprotected content and stay restorable by anyone with access — this defeats the protection for existing files.') }}
 					</NcNoteCard>
 				</div>
 			</NcSettingsSection>
 
 			<!-- Access control (SDD §8.2) -->
-			<NcSettingsSection :name="t('files_seclore', 'Access control')"
-				:description="t('files_seclore', 'Who may protect and unprotect files. Unprotection is always audited.')">
+			<NcSettingsSection :name="t('sclrit', 'Access control')"
+				:description="t('sclrit', 'Who may protect and unprotect files. Unprotection is always audited.')">
 				<div class="seclore-admin__form">
 					<div class="seclore-admin__field">
-						<label for="seclore-allowed-groups">{{ t('files_seclore', 'Groups allowed to protect (empty: everyone)') }}</label>
+						<label for="seclore-allowed-groups">{{ t('sclrit', 'Groups allowed to protect (empty: everyone)') }}</label>
 						<NcSelect v-model="form.allowedGroups"
 							input-id="seclore-allowed-groups"
 							:options="groupOptions"
@@ -120,7 +120,7 @@
 							@search="onGroupSearch" />
 					</div>
 					<div class="seclore-admin__field">
-						<label for="seclore-unprotect-groups">{{ t('files_seclore', 'Groups allowed to unprotect (empty: nobody)') }}</label>
+						<label for="seclore-unprotect-groups">{{ t('sclrit', 'Groups allowed to unprotect (empty: nobody)') }}</label>
 						<NcSelect v-model="form.unprotectGroups"
 							input-id="seclore-unprotect-groups"
 							:options="groupOptions"
@@ -132,13 +132,13 @@
 			</NcSettingsSection>
 
 			<!-- Advanced (SDD Appendix A) -->
-			<NcSettingsSection :name="t('files_seclore', 'Advanced')">
+			<NcSettingsSection :name="t('sclrit', 'Advanced')">
 				<div class="seclore-admin__form">
 					<NcTextField v-model="form.requestTimeoutMax"
-						:label="t('files_seclore', 'Maximum request timeout (seconds)')"
+						:label="t('sclrit', 'Maximum request timeout (seconds)')"
 						type="number" />
 					<NcTextField v-model="form.staleAfter"
-						:label="t('files_seclore', 'Mark stuck operations as failed after (seconds)')"
+						:label="t('sclrit', 'Mark stuck operations as failed after (seconds)')"
 						type="number" />
 				</div>
 			</NcSettingsSection>
@@ -146,7 +146,7 @@
 			<NcSettingsSection :name="''">
 				<div class="seclore-admin__actions">
 					<NcButton type="primary" :disabled="saving" @click="save">
-						{{ saving ? t('files_seclore', 'Saving…') : t('files_seclore', 'Save settings') }}
+						{{ saving ? t('sclrit', 'Saving…') : t('sclrit', 'Save settings') }}
 					</NcButton>
 				</div>
 			</NcSettingsSection>
@@ -243,9 +243,9 @@ export default Vue.extend({
 				return ''
 			}
 			if (this.testResult.ok) {
-				return t('files_seclore', 'Connection and authentication OK.')
+				return t('sclrit', 'Connection and authentication OK.')
 			}
-			return this.testResult.error || t('files_seclore', 'Connection failed.')
+			return this.testResult.error || t('sclrit', 'Connection failed.')
 		},
 	},
 
@@ -336,7 +336,7 @@ export default Vue.extend({
 				})
 				this.applyConfig(config)
 				this.appSecret = ''
-				showSuccess(t('files_seclore', 'Seclore settings saved.'))
+				showSuccess(t('sclrit', 'Seclore settings saved.'))
 			} catch (error) {
 				showError(ocsErrorMessage(error))
 			} finally {

@@ -30,7 +30,7 @@ export interface PolicyList {
 	defaultId: string
 }
 
-const apiUrl = (path: string): string => generateOcsUrl('apps/files_seclore/api/v1{path}', { path })
+const apiUrl = (path: string): string => generateOcsUrl('apps/sclrit/api/v1{path}', { path })
 
 export async function protectFile(fileId: number, hotFolderId?: string | null): Promise<ProtectionState> {
 	const { data } = await axios.post(apiUrl('/protect'), {

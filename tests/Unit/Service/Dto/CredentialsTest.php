@@ -6,9 +6,9 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\FilesSeclore\Tests\Unit\Service\Dto;
+namespace OCA\Sclrit\Tests\Unit\Service\Dto;
 
-use OCA\FilesSeclore\Service\Dto\Credentials;
+use OCA\Sclrit\Service\Dto\Credentials;
 use PHPUnit\Framework\TestCase;
 
 class CredentialsTest extends TestCase {

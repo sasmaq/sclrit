@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <info xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
       xsi:noNamespaceSchemaLocation="https://apps.nextcloud.com/schema/apps/info.xsd">
-	<id>files_seclore</id>
-	<name>Seclore File Protection</name>
+	<id>sclrit</id>
+	<name>Sclrit — Seclore File Protection</name>
 	<summary>Protect files on demand with Seclore Enterprise DRM</summary>
 	<description><![CDATA[
 Apply persistent Seclore usage policies (view, edit, print, copy, validity, watermarking, …) to files directly from Nextcloud.
@@ -14,7 +14,7 @@ Protection is performed by your organisation's Seclore Policy Server. The protec
 	<version>0.1.0</version>
 	<licence>agpl</licence>
 	<author mail="sas111my@gmail.com">S. Almuqwashy</author>
-	<namespace>FilesSeclore</namespace>
+	<namespace>Sclrit</namespace>
 	<category>files</category>
 	<category>security</category>
 	<bugs>https://example.invalid/sclrit/issues</bugs>
@@ -23,30 +23,30 @@ Protection is performed by your organisation's Seclore Policy Server. The protec
 		<nextcloud min-version="31" max-version="31"/>
 	</dependencies>
 	<background-jobs>
-		<job>OCA\FilesSeclore\BackgroundJob\StaleSweepJob</job>
+		<job>OCA\Sclrit\BackgroundJob\StaleSweepJob</job>
 	</background-jobs>
 	<repair-steps>
 		<install>
-			<step>OCA\FilesSeclore\Migration\RegisterMetadata</step>
+			<step>OCA\Sclrit\Migration\RegisterMetadata</step>
 		</install>
 		<post-migration>
-			<step>OCA\FilesSeclore\Migration\RegisterMetadata</step>
+			<step>OCA\Sclrit\Migration\RegisterMetadata</step>
 		</post-migration>
 	</repair-steps>
 	<commands>
-		<command>OCA\FilesSeclore\Command\TestConnection</command>
-		<command>OCA\FilesSeclore\Command\Protect</command>
-		<command>OCA\FilesSeclore\Command\Status</command>
+		<command>OCA\Sclrit\Command\TestConnection</command>
+		<command>OCA\Sclrit\Command\Protect</command>
+		<command>OCA\Sclrit\Command\Status</command>
 	</commands>
 	<settings>
-		<admin>OCA\FilesSeclore\Settings\AdminSettings</admin>
+		<admin>OCA\Sclrit\Settings\AdminSettings</admin>
 	</settings>
 	<activity>
 		<settings>
-			<setting>OCA\FilesSeclore\Activity\Setting</setting>
+			<setting>OCA\Sclrit\Activity\Setting</setting>
 		</settings>
 		<providers>
-			<provider>OCA\FilesSeclore\Activity\Provider</provider>
+			<provider>OCA\Sclrit\Activity\Provider</provider>
 		</providers>
 	</activity>
 </info>

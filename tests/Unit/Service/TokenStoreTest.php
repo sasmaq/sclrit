@@ -6,13 +6,13 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\FilesSeclore\Tests\Unit\Service;
+namespace OCA\Sclrit\Tests\Unit\Service;
 
-use OCA\FilesSeclore\AppInfo\Application;
-use OCA\FilesSeclore\Exceptions\SecloreUnavailableException;
-use OCA\FilesSeclore\Service\Dto\Credentials;
-use OCA\FilesSeclore\Service\Dto\Token;
-use OCA\FilesSeclore\Service\TokenStore;
+use OCA\Sclrit\AppInfo\Application;
+use OCA\Sclrit\Exceptions\SecloreUnavailableException;
+use OCA\Sclrit\Service\Dto\Credentials;
+use OCA\Sclrit\Service\Dto\Token;
+use OCA\Sclrit\Service\TokenStore;
 use OCP\ICache;
 use OCP\ICacheFactory;
 use OCP\IMemcache;

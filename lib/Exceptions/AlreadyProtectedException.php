@@ -6,7 +6,7 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\FilesSeclore\Exceptions;
+namespace OCA\Sclrit\Exceptions;
 
 /** The file is already protected (SDD §9 E3). Re-protection is a v2 feature. */
 class AlreadyProtectedException extends ProtectionException {

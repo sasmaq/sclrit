@@ -21,7 +21,7 @@ interface FilesSidebar {
 const getSidebar = (): FilesSidebar | null =>
 	(window as unknown as { OCA?: { Files?: { Sidebar?: FilesSidebar } } }).OCA?.Files?.Sidebar ?? null
 
-export const TAB_ID = 'files_seclore'
+export const TAB_ID = 'sclrit'
 
 export function registerSecloreSidebarTab(): void {
 	window.addEventListener('DOMContentLoaded', () => {
@@ -35,7 +35,7 @@ export function registerSecloreSidebarTab(): void {
 
 		sidebar.registerTab(new sidebar.Tab({
 			id: TAB_ID,
-			name: t('files_seclore', 'Seclore'),
+			name: t('sclrit', 'Seclore'),
 			iconSvg: lockSvg,
 			enabled: (fileInfo: { type?: string } | null) => fileInfo?.type === 'file',
 

@@ -6,15 +6,15 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\FilesSeclore\AppInfo;
+namespace OCA\Sclrit\AppInfo;
 
 use OCA\Files\Event\LoadAdditionalScriptsEvent;
-use OCA\FilesSeclore\Capabilities;
-use OCA\FilesSeclore\Listener\LoadAdditionalScriptsListener;
-use OCA\FilesSeclore\Listener\NodeDeletedListener;
-use OCA\FilesSeclore\Notification\Notifier;
-use OCA\FilesSeclore\Service\ISecloreClient;
-use OCA\FilesSeclore\Service\SecloreClient;
+use OCA\Sclrit\Capabilities;
+use OCA\Sclrit\Listener\LoadAdditionalScriptsListener;
+use OCA\Sclrit\Listener\NodeDeletedListener;
+use OCA\Sclrit\Notification\Notifier;
+use OCA\Sclrit\Service\ISecloreClient;
+use OCA\Sclrit\Service\SecloreClient;
 use OCP\AppFramework\App;
 use OCP\AppFramework\Bootstrap\IBootContext;
 use OCP\AppFramework\Bootstrap\IBootstrap;
@@ -22,7 +22,7 @@ use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use OCP\Files\Events\Node\NodeDeletedEvent;
 
 class Application extends App implements IBootstrap {
-	public const APP_ID = 'files_seclore';
+	public const APP_ID = 'sclrit';
 
 	public function __construct(array $urlParams = []) {
 		parent::__construct(self::APP_ID, $urlParams);
@@ -32,7 +32,7 @@ class Application extends App implements IBootstrap {
 		// The Seclore REST contract lives behind this interface (SDD §7, decision D3).
 		$context->registerServiceAlias(ISecloreClient::class, SecloreClient::class);
 
-		// files_seclore: {enabled, canProtect, canUnprotect, defaultPolicy} (SDD §4.3).
+		// sclrit: {enabled, canProtect, canUnprotect, defaultPolicy} (SDD §4.3).
 		$context->registerCapability(Capabilities::class);
 
 		// Files web UI integration bundle (SDD §5.1).

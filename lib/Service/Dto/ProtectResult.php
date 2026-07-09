@@ -6,7 +6,7 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\FilesSeclore\Service\Dto;
+namespace OCA\Sclrit\Service\Dto;
 
 /**
  * Outcome of a successful protect call. The caller owns $tempPath and must

@@ -9,7 +9,7 @@
 		<p class="confirm-dialog__message">{{ message }}</p>
 		<template #actions>
 			<NcButton @click="close(false)">
-				{{ t('files_seclore', 'Cancel') }}
+				{{ t('sclrit', 'Cancel') }}
 			</NcButton>
 			<NcButton :type="destructive ? 'error' : 'primary'" @click="close(true)">
 				{{ confirmLabel }}

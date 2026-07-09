@@ -6,11 +6,11 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\FilesSeclore\Tests\Unit\Service;
+namespace OCA\Sclrit\Tests\Unit\Service;
 
-use OCA\FilesSeclore\Service\ConfigService;
-use OCA\FilesSeclore\Service\PolicyService;
-use OCA\FilesSeclore\Tests\Unit\AppConfigMockTrait;
+use OCA\Sclrit\Service\ConfigService;
+use OCA\Sclrit\Service\PolicyService;
+use OCA\Sclrit\Tests\Unit\AppConfigMockTrait;
 use PHPUnit\Framework\TestCase;
 
 class PolicyServiceTest extends TestCase {

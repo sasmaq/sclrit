@@ -1,10 +1,10 @@
 # Software Design Document
 
-## Seclore File Protection for Nextcloud (`files_seclore`)
+## Seclore File Protection for Nextcloud (`sclrit`)
 
 | | |
 | --- | --- |
-| **App ID** | `files_seclore` |
+| **App ID** | `sclrit` |
 | **Target platform** | Nextcloud 31 (Hub 10) |
 | **Document status** | Draft v0.1 |
 | **Date** | 2026-07-08 |
@@ -37,7 +37,7 @@
 
 ### 1.1 Purpose
 
-This document describes the design of **Seclore File Protection** (`files_seclore`), a Nextcloud 31 app that lets users protect files stored in Nextcloud **on demand** using [Seclore](https://www.seclore.com) Enterprise Digital Rights Management (EDRM). Protection is applied by the Seclore Policy Server through its REST API; the resulting rights-managed file replaces the original content in Nextcloud. Usage rights (view, edit, print, copy, screen capture, validity period, watermarking, …) then travel with the file and are enforced by Seclore clients wherever the file goes — including after it leaves Nextcloud via download, sync, or sharing.
+This document describes the design of **Seclore File Protection** (`sclrit`), a Nextcloud 31 app that lets users protect files stored in Nextcloud **on demand** using [Seclore](https://www.seclore.com) Enterprise Digital Rights Management (EDRM). Protection is applied by the Seclore Policy Server through its REST API; the resulting rights-managed file replaces the original content in Nextcloud. Usage rights (view, edit, print, copy, screen capture, validity period, watermarking, …) then travel with the file and are enforced by Seclore clients wherever the file goes — including after it leaves Nextcloud via download, sync, or sharing.
 
 ### 1.2 Scope
 
@@ -109,7 +109,7 @@ flowchart LR
     end
 
     subgraph NC["Nextcloud 31"]
-        APP["files_seclore app"]
+        APP["sclrit app"]
         FILES[("File storage<br/>(Files API)")]
         DB[("Database<br/>state + config")]
         CRON["Background job workers"]
@@ -211,13 +211,13 @@ flowchart TB
 | Caching | `OCP\ICacheFactory` distributed cache | Token + policy-list caching across web/cron workers. |
 | Background work | `OCP\BackgroundJob\QueuedJob` + `IJobList` | Executed by system cron/ajax cron. |
 | Frontend | Vue 2.7 + `@nextcloud/vue` 8.x, `@nextcloud/files` 3.x, `@nextcloud/axios`, `@nextcloud/dialogs` | Nextcloud 31 ships the Vue 2.7-based component line; the Vue 3 line (`@nextcloud/vue` 9) is not yet the platform default. |
-| Build | Vite (`@nextcloud/vite-config`), TypeScript | Outputs `js/files_seclore-main.mjs`, `js/files_seclore-admin.mjs`. |
+| Build | Vite (`@nextcloud/vite-config`), TypeScript | Outputs `js/sclrit-main.mjs`, `js/sclrit-admin.mjs`. |
 | i18n | `@nextcloud/l10n` / `OCP\IL10N` | All user-facing strings translatable. |
 
 ### 3.3 App skeleton
 
 ```text
-files_seclore/
+sclrit/
 ├── appinfo/
 │   ├── info.xml                  # id, dependencies (nextcloud 31), commands, settings
 │   └── routes.php                # (or attribute-based routes on controllers)
@@ -247,9 +247,9 @@ files_seclore/
 │   ├── Activity/                 # provider + events for audit trail
 │   ├── Notification/Notifier.php
 │   ├── Command/
-│   │   ├── Protect.php           # occ files_seclore:protect
-│   │   ├── Status.php            # occ files_seclore:status
-│   │   └── TestConnection.php    # occ files_seclore:test
+│   │   ├── Protect.php           # occ sclrit:protect
+│   │   ├── Status.php            # occ sclrit:status
+│   │   └── TestConnection.php    # occ sclrit:test
 │   └── Exceptions/               # SecloreApiException, ConflictException, …
 ├── src/
 │   ├── main.ts                   # Files app integration (actions, badge, sidebar tab)
@@ -267,7 +267,7 @@ files_seclore/
 <?xml version="1.0"?>
 <info xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
       xsi:noNamespaceSchemaLocation="https://apps.nextcloud.com/schema/apps/info.xsd">
-    <id>files_seclore</id>
+    <id>sclrit</id>
     <name>Seclore File Protection</name>
     <summary>Protect files on demand with Seclore Enterprise DRM</summary>
     <description><![CDATA[Apply persistent Seclore usage policies to files directly from Nextcloud.]]></description>
@@ -280,12 +280,12 @@ files_seclore/
         <nextcloud min-version="31" max-version="31"/>
     </dependencies>
     <commands>
-        <command>OCA\FilesSeclore\Command\Protect</command>
-        <command>OCA\FilesSeclore\Command\Status</command>
-        <command>OCA\FilesSeclore\Command\TestConnection</command>
+        <command>OCA\Sclrit\Command\Protect</command>
+        <command>OCA\Sclrit\Command\Status</command>
+        <command>OCA\Sclrit\Command\TestConnection</command>
     </commands>
     <settings>
-        <admin>OCA\FilesSeclore\Settings\AdminSettings</admin>
+        <admin>OCA\Sclrit\Settings\AdminSettings</admin>
     </settings>
 </info>
 ```
@@ -358,7 +358,7 @@ stateDiagram-v2
 
 ### 4.3 OCS API
 
-All routes are OCS (`OCSController`), CSRF-protected by the OCS token, under `/ocs/v2.php/apps/files_seclore/`. Declared with route attributes (`#[ApiRoute]`); user endpoints carry `#[NoAdminRequired]` and rate limits (`#[UserRateLimit]`).
+All routes are OCS (`OCSController`), CSRF-protected by the OCS token, under `/ocs/v2.php/apps/sclrit/`. Declared with route attributes (`#[ApiRoute]`); user endpoints carry `#[NoAdminRequired]` and rate limits (`#[UserRateLimit]`).
 
 | Method & route | Body / params | Success response | Notes |
 | --- | --- | --- | --- |
@@ -373,19 +373,19 @@ All routes are OCS (`OCSController`), CSRF-protected by the OCS token, under `/o
 
 `state` object: `{fileId, status, hotFolderId?, policyName?, secloreFileId?, requestedBy?, updatedAt, error?}`.
 
-The app also registers a **capability** (`OCP\Capabilities\ICapability`) advertising `files_seclore: {enabled, canProtect, canUnprotect, defaultPolicy}` so clients and scripts can discover availability per user.
+The app also registers a **capability** (`OCP\Capabilities\ICapability`) advertising `sclrit: {enabled, canProtect, canUnprotect, defaultPolicy}` so clients and scripts can discover availability per user.
 
 ### 4.4 `occ` commands
 
 | Command | Behavior |
 | --- | --- |
-| `occ files_seclore:test` | Connection + auth + policy listing check; exit code for monitoring. |
-| `occ files_seclore:protect --user <uid> <path> [--policy <id>] [--recursive]` | Protect a file (or files under a folder with `--recursive`), synchronously, streaming progress. Intended for admin/batch use. |
-| `occ files_seclore:status [--failed]` | Tabular dump of state rows; `--failed` filters for triage. |
+| `occ sclrit:test` | Connection + auth + policy listing check; exit code for monitoring. |
+| `occ sclrit:protect --user <uid> <path> [--policy <id>] [--recursive]` | Protect a file (or files under a folder with `--recursive`), synchronously, streaming progress. Intended for admin/batch use. |
+| `occ sclrit:status [--failed]` | Tabular dump of state rows; `--failed` filters for triage. |
 
 ### 4.5 Files UI status projection
 
-Authoritative state lives in the DB (§6). For cheap display in file lists, the app additionally writes a boolean flag through the **files metadata API** (`OCP\FilesMetadata\IFilesMetadataManager`, available since NC 28): key `files_seclore-protected`. Metadata is exposed on WebDAV PROPFIND, which lets the web UI (and future clients) render a badge without extra round-trips. If the metadata subsystem is unavailable, the frontend falls back to batched `GET /status` calls; the feature degrades, it doesn't break.
+Authoritative state lives in the DB (§6). For cheap display in file lists, the app additionally writes a boolean flag through the **files metadata API** (`OCP\FilesMetadata\IFilesMetadataManager`, available since NC 28): key `sclrit-protected`. Metadata is exposed on WebDAV PROPFIND, which lets the web UI (and future clients) render a badge without extra round-trips. If the metadata subsystem is unavailable, the frontend falls back to batched `GET /status` calls; the feature degrades, it doesn't break.
 
 ### 4.6 Settings, activity, notifications
 
@@ -400,10 +400,10 @@ Authoritative state lives in the DB (§6). For cheap display in file lists, the 
 ### 5.1 Files app integration (`src/main.ts`)
 
 - **File action** registered with `registerFileAction(new FileAction({...}))` from `@nextcloud/files`:
-  - `id: 'files_seclore-protect'`, display name *"Protect with Seclore"*, inline SVG lock icon.
+  - `id: 'sclrit-protect'`, display name *"Protect with Seclore"*, inline SVG lock icon.
   - `enabled(nodes, view)`: every node is a file (v1: no folders), user capability `canProtect`, node has `PERMISSION_UPDATE`, node not already `protected|pending|processing`, not inside an E2EE folder, view is not trashbin/versions.
   - `exec(node)` opens the **policy picker**; `execBatch(nodes)` runs the same picker once and fires one `POST /protect` per node (bounded concurrency of 3, progress toast, per-file error surfacing).
-- **Unprotect action** (`files_seclore-unprotect`) shown only when capability `canUnprotect` and state is `protected`; requires an explicit confirmation dialog.
+- **Unprotect action** (`sclrit-unprotect`) shown only when capability `canUnprotect` and state is `protected`; requires an explicit confirmation dialog.
 - **Retry action** shown on `failed` state.
 
 ### 5.2 Policy picker dialog
@@ -422,7 +422,7 @@ Single Vue component mounted into the settings template. Secret input is write-o
 
 ### 5.5 Accessibility & i18n
 
-All dialogs and actions use `@nextcloud/vue` components (keyboard/focus management included); icons have text labels; status is never conveyed by color alone (badge shape + tooltip text). Every string goes through `t('files_seclore', …)`.
+All dialogs and actions use `@nextcloud/vue` components (keyboard/focus management included); icons have text labels; status is never conveyed by color alone (badge shape + tooltip text). Every string goes through `t('sclrit', …)`.
 
 ---
 
@@ -447,7 +447,7 @@ One row per file that has ever been protected or has an in-flight/failed request
 | `request_id` | varchar(32) | nullable | Correlation id of the last protect/unprotect attempt (§7.4). |
 | `created_at` / `updated_at` | bigint (unix) | not null | Watchdog + display. |
 
-Indexes: unique(`file_id`); (`status`, `updated_at`) for the watchdog sweep and `occ files_seclore:status --failed`.
+Indexes: unique(`file_id`); (`status`, `updated_at`) for the watchdog sweep and `occ sclrit:status --failed`.
 
 Lifecycle notes: rows are deleted on successful unprotect and by a repair step when the underlying file is permanently deleted (listener on `NodeDeletedEvent` — trashbin deletion keeps the row until final purge, so restore-from-trash retains status).
 
@@ -553,7 +553,7 @@ Timeouts: connect 10 s; request timeout scales with size (`max(120 s, size / 1 M
 ```mermaid
 sequenceDiagram
     actor U as User
-    participant FE as Files UI (files_seclore)
+    participant FE as Files UI (sclrit)
     participant API as OCS ApiController
     participant P as ProtectionService
     participant S as SecloreClient
@@ -639,7 +639,7 @@ Protecting a file transmits its **full content**, filename, the acting user's em
 | E11 | Restore from trashbin / version restore | Trash restore: state row preserved (rows deleted only on final purge). Version restore to a pre-protection version (only possible when `purge_versions` is off): listener on version-restore compares content ⇒ clears `protected` state to avoid a false badge. |
 | E12 | App disabled/uninstalled with queued jobs | Jobs are removed with the app; state rows remain (table kept on disable, dropped only on uninstall per app-store semantics). Documented. |
 | E13 | Two users protect the same file simultaneously | Unique `file_id` row + status guard: second request gets `409 (in progress)`. |
-| E14 | Watchdog | `pending/processing` older than 6 h swept to `failed(stale)`; visible in `occ files_seclore:status --failed`. |
+| E14 | Watchdog | `pending/processing` older than 6 h swept to `failed(stale)`; visible in `occ sclrit:status --failed`. |
 
 ---
 
@@ -656,9 +656,9 @@ Protecting a file transmits its **full content**, filename, the acting user's em
 
 ## 11. Observability
 
-- **Structured logs** (PSR-3 via `LoggerInterface`, app channel `files_seclore`): every operation logs `{event, fileId, requestId, userId, policyId, bytes, durationMs, outcome, errorClass}` at `info` (success) / `warning` (user-correctable) / `error` (system). Content and secrets never logged (§8.3).
+- **Structured logs** (PSR-3 via `LoggerInterface`, app channel `sclrit`): every operation logs `{event, fileId, requestId, userId, policyId, bytes, durationMs, outcome, errorClass}` at `info` (success) / `warning` (user-correctable) / `error` (system). Content and secrets never logged (§8.3).
 - **Correlation**: `X-Request-Id` shared between Nextcloud logs, the state row, and the outbound Seclore call for cross-system triage.
-- **Admin visibility**: settings page shows last successful connection test and counts of `failed` states with a link to documentation; `occ files_seclore:status` for scripted monitoring; connection test command exits non-zero for health checks.
+- **Admin visibility**: settings page shows last successful connection test and counts of `failed` states with a link to documentation; `occ sclrit:status` for scripted monitoring; connection test command exits non-zero for health checks.
 - **Activity + admin_audit**: every protect/unprotect/failure event (§4.6) — the compliance-facing trail.
 
 ---
@@ -681,7 +681,7 @@ Protecting a file transmits its **full content**, filename, the acting user's em
 - **Distribution**: signed release via the Nextcloud App Store (`security`/`files` categories) or enterprise sideload; standard app signing certificate flow.
 - **Install/upgrade**: migrations run automatically; no manual DB steps. `max-version` is bumped per Nextcloud release after the CI matrix passes (NC 32 expected to require the Vue 3 / `@nextcloud/vue` 9 migration — tracked as a known upgrade task).
 - **First-run runbook** (admin docs): register the enterprise app in the Seclore console → obtain app ID/secret → configure + *Test connection* → choose default policy → set `allowed_groups`/`unprotect_groups` → decide on `purge_versions` → protect a test file end-to-end and open it in a Seclore client.
-- **Ops**: monitor via `occ files_seclore:test` (health) and `:status --failed` (triage); log channel documented; watchdog covers stuck jobs automatically.
+- **Ops**: monitor via `occ sclrit:test` (health) and `:status --failed` (triage); log channel documented; watchdog covers stuck jobs automatically.
 
 ---
 
@@ -716,7 +716,7 @@ Items to resolve with the customer's Seclore deployment **before implementation 
 
 ## Appendix A — Configuration keys
 
-All under app `files_seclore` via `IAppConfig`.
+All under app `sclrit` via `IAppConfig`.
 
 | Key | Type | Default | Sensitive | Description |
 | --- | --- | --- | --- | --- |

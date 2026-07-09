@@ -1,5 +1,5 @@
 {
-    "name": "files_seclore",
+    "name": "sclrit",
     "description": "Nextcloud app: protect files on demand with Seclore Enterprise DRM",
     "version": "0.1.0",
     "private": true,

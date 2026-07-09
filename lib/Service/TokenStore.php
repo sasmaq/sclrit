@@ -6,11 +6,11 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\FilesSeclore\Service;
+namespace OCA\Sclrit\Service;
 
-use OCA\FilesSeclore\AppInfo\Application;
-use OCA\FilesSeclore\Service\Dto\Credentials;
-use OCA\FilesSeclore\Service\Dto\Token;
+use OCA\Sclrit\AppInfo\Application;
+use OCA\Sclrit\Service\Dto\Credentials;
+use OCA\Sclrit\Service\Dto\Token;
 use OCP\ICache;
 use OCP\ICacheFactory;
 use OCP\IMemcache;

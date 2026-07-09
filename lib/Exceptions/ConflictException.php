@@ -6,7 +6,7 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\FilesSeclore\Exceptions;
+namespace OCA\Sclrit\Exceptions;
 
 /**
  * The file changed between the pre-protect ETag snapshot and the write-back

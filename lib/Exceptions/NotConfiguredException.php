@@ -6,7 +6,7 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\FilesSeclore\Exceptions;
+namespace OCA\Sclrit\Exceptions;
 
 /** The integration has not been configured yet (SDD Appendix A). */
 class NotConfiguredException extends SecloreApiException {

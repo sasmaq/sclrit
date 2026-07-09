@@ -6,9 +6,9 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\FilesSeclore\Listener;
+namespace OCA\Sclrit\Listener;
 
-use OCA\FilesSeclore\AppInfo\Application;
+use OCA\Sclrit\AppInfo\Application;
 use OCA\Files\Event\LoadAdditionalScriptsEvent;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;

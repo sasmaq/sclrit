@@ -6,10 +6,10 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\FilesSeclore\Command;
+namespace OCA\Sclrit\Command;
 
-use OCA\FilesSeclore\Db\SecloreState;
-use OCA\FilesSeclore\Db\SecloreStateMapper;
+use OCA\Sclrit\Db\SecloreState;
+use OCA\Sclrit\Db\SecloreStateMapper;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Input\InputInterface;
@@ -17,7 +17,7 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
- * occ files_seclore:status — tabular dump of the protection state rows for
+ * occ sclrit:status — tabular dump of the protection state rows for
  * triage and scripted monitoring (SDD §4.4, §11).
  */
 class Status extends Command {
@@ -31,7 +31,7 @@ class Status extends Command {
 
 	protected function configure(): void {
 		$this
-			->setName('files_seclore:status')
+			->setName('sclrit:status')
 			->setDescription('Show Seclore protection states')
 			->addOption('failed', null, InputOption::VALUE_NONE, 'Only show failed entries')
 			->addOption('limit', null, InputOption::VALUE_REQUIRED, 'Maximum number of rows (most recently updated first)', '500');

@@ -15,7 +15,7 @@ import { openSecloreTab } from '../../src/sidebar'
 const capabilities = vi.hoisted(() => ({ value: {} as Record<string, unknown> }))
 
 vi.mock('@nextcloud/capabilities', () => ({
-	getCapabilities: () => ({ files_seclore: capabilities.value }),
+	getCapabilities: () => ({ sclrit: capabilities.value }),
 }))
 
 vi.mock('@nextcloud/dialogs', () => ({
@@ -48,7 +48,7 @@ vi.mock('../../src/sidebar', () => ({
 	registerSecloreSidebarTab: vi.fn(),
 }))
 
-const PROTECTED_ATTRIBUTE = 'metadata-files_seclore-protected'
+const PROTECTED_ATTRIBUTE = 'metadata-sclrit-protected'
 
 const filesView = { id: 'files' } as View
 const trashbinView = { id: 'trashbin' } as View
@@ -104,9 +104,9 @@ describe('registration', () => {
 		const actions = await loadActions(allCaps)
 
 		expect(Object.keys(actions).sort()).toEqual([
-			'files_seclore-protect',
-			'files_seclore-status',
-			'files_seclore-unprotect',
+			'sclrit-protect',
+			'sclrit-status',
+			'sclrit-unprotect',
 		])
 
 		const { registerDavProperty } = vi.mocked(await import('@nextcloud/files'))
@@ -122,19 +122,19 @@ describe('registration', () => {
 
 describe('protect action enablement', () => {
 	it('is enabled for unprotected, updatable files in a regular view', async () => {
-		const { 'files_seclore-protect': protect } = await loadActions(allCaps)
+		const { 'sclrit-protect': protect } = await loadActions(allCaps)
 
 		expect(protect.enabled!([fakeNode(), fakeNode()], filesView)).toBe(true)
 	})
 
 	it('is disabled without the canProtect capability', async () => {
-		const { 'files_seclore-protect': protect } = await loadActions({ enabled: true, canProtect: false })
+		const { 'sclrit-protect': protect } = await loadActions({ enabled: true, canProtect: false })
 
 		expect(protect.enabled!([fakeNode()], filesView)).toBe(false)
 	})
 
 	it('is disabled in the trashbin, for folders, and without update permission', async () => {
-		const { 'files_seclore-protect': protect } = await loadActions(allCaps)
+		const { 'sclrit-protect': protect } = await loadActions(allCaps)
 
 		expect(protect.enabled!([fakeNode()], trashbinView)).toBe(false)
 		expect(protect.enabled!([fakeNode({ type: FileType.Folder })], filesView)).toBe(false)
@@ -143,7 +143,7 @@ describe('protect action enablement', () => {
 	})
 
 	it('is disabled when any selected node is already protected', async () => {
-		const { 'files_seclore-protect': protect } = await loadActions(allCaps)
+		const { 'sclrit-protect': protect } = await loadActions(allCaps)
 
 		for (const marker of [true, 1, '1', 'true']) {
 			const marked = fakeNode({ attributes: { [PROTECTED_ATTRIBUTE]: marker } })
@@ -154,19 +154,19 @@ describe('protect action enablement', () => {
 
 describe('unprotect action enablement', () => {
 	it('requires the capability and every node to be protected', async () => {
-		const { 'files_seclore-unprotect': unprotect } = await loadActions(allCaps)
+		const { 'sclrit-unprotect': unprotect } = await loadActions(allCaps)
 
 		expect(unprotect.enabled!([protectedNode()], filesView)).toBe(true)
 		expect(unprotect.enabled!([protectedNode(), fakeNode()], filesView)).toBe(false)
 
-		const { 'files_seclore-unprotect': withoutCap } = await loadActions({ enabled: true, canUnprotect: false })
+		const { 'sclrit-unprotect': withoutCap } = await loadActions({ enabled: true, canUnprotect: false })
 		expect(withoutCap.enabled!([protectedNode()], filesView)).toBe(false)
 	})
 })
 
 describe('protect flow', () => {
 	it('protects the file with the picked policy and marks the node', async () => {
-		const { 'files_seclore-protect': protect } = await loadActions(allCaps)
+		const { 'sclrit-protect': protect } = await loadActions(allCaps)
 		vi.mocked(pickPolicy).mockResolvedValue('hf-1')
 		vi.mocked(protectFile).mockImplementation(async (fileId) => fileState(fileId, 'protected'))
 
@@ -182,7 +182,7 @@ describe('protect flow', () => {
 	})
 
 	it('shows a single picker for a batch and reports queued files separately', async () => {
-		const { 'files_seclore-protect': protect } = await loadActions(allCaps)
+		const { 'sclrit-protect': protect } = await loadActions(allCaps)
 		vi.mocked(pickPolicy).mockResolvedValue('hf-1')
 		vi.mocked(protectFile).mockImplementation(async (fileId) =>
 			fileState(fileId, fileId === 1 ? 'protected' : 'pending'))
@@ -201,7 +201,7 @@ describe('protect flow', () => {
 	})
 
 	it('does nothing when the picker is cancelled', async () => {
-		const { 'files_seclore-protect': protect } = await loadActions(allCaps)
+		const { 'sclrit-protect': protect } = await loadActions(allCaps)
 		vi.mocked(pickPolicy).mockResolvedValue(null)
 
 		const results = await protect.execBatch!([fakeNode(), fakeNode()], filesView, '/')
@@ -211,7 +211,7 @@ describe('protect flow', () => {
 	})
 
 	it('reports per-file errors and keeps the node unmarked', async () => {
-		const { 'files_seclore-protect': protect } = await loadActions(allCaps)
+		const { 'sclrit-protect': protect } = await loadActions(allCaps)
 		vi.mocked(pickPolicy).mockResolvedValue('hf-1')
 		vi.mocked(protectFile).mockRejectedValue(new Error('File is too large'))
 
@@ -227,7 +227,7 @@ describe('protect flow', () => {
 
 describe('unprotect flow', () => {
 	it('asks for confirmation and unmarks the node on success', async () => {
-		const { 'files_seclore-unprotect': unprotect } = await loadActions(allCaps)
+		const { 'sclrit-unprotect': unprotect } = await loadActions(allCaps)
 		vi.mocked(confirmDialog).mockResolvedValue(true)
 		vi.mocked(unprotectFile).mockImplementation(async (fileId) => fileState(fileId, 'none'))
 
@@ -242,7 +242,7 @@ describe('unprotect flow', () => {
 	})
 
 	it('does nothing when the confirmation is declined', async () => {
-		const { 'files_seclore-unprotect': unprotect } = await loadActions(allCaps)
+		const { 'sclrit-unprotect': unprotect } = await loadActions(allCaps)
 		vi.mocked(confirmDialog).mockResolvedValue(false)
 
 		const result = await unprotect.exec(protectedNode(), filesView, '/')
@@ -254,7 +254,7 @@ describe('unprotect flow', () => {
 
 describe('status badge', () => {
 	it('is inline and enabled only for a single protected node', async () => {
-		const { 'files_seclore-status': status } = await loadActions(allCaps)
+		const { 'sclrit-status': status } = await loadActions(allCaps)
 
 		expect(status.inline!(protectedNode(), filesView)).toBe(true)
 		expect(status.enabled!([protectedNode()], filesView)).toBe(true)
@@ -264,13 +264,13 @@ describe('status badge', () => {
 	})
 
 	it('is hidden entirely when the app is disabled', async () => {
-		const { 'files_seclore-status': status } = await loadActions({ enabled: false })
+		const { 'sclrit-status': status } = await loadActions({ enabled: false })
 
 		expect(status.enabled!([protectedNode()], filesView)).toBe(false)
 	})
 
 	it('opens the Seclore sidebar tab on click', async () => {
-		const { 'files_seclore-status': status } = await loadActions(allCaps)
+		const { 'sclrit-status': status } = await loadActions(allCaps)
 
 		const node = protectedNode()
 		expect(await status.exec(node, filesView, '/')).toBeNull()

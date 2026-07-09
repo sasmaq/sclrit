@@ -6,7 +6,7 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\FilesSeclore\Db;
+namespace OCA\Sclrit\Db;
 
 use OCP\AppFramework\Db\DoesNotExistException;
 use OCP\AppFramework\Db\QBMapper;
@@ -69,7 +69,7 @@ class SecloreStateMapper extends QBMapper {
 
 	/**
 	 * Most recently updated rows, optionally filtered by status — for
-	 * `occ files_seclore:status` (SDD §4.4).
+	 * `occ sclrit:status` (SDD §4.4).
 	 *
 	 * @return SecloreState[]
 	 */

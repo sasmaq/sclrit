@@ -6,9 +6,9 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\FilesSeclore\Tests\Unit;
+namespace OCA\Sclrit\Tests\Unit;
 
-use OCA\FilesSeclore\Service\ConfigService;
+use OCA\Sclrit\Service\ConfigService;
 use OCP\IAppConfig;
 
 /**

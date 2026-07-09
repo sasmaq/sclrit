@@ -9,7 +9,7 @@ import { fetchPolicies, ocsErrorMessage } from './api'
 import ConfirmDialog from './components/ConfirmDialog.vue'
 import PolicyPicker from './components/PolicyPicker.vue'
 
-const LAST_POLICY_KEY = 'files_seclore:last-policy'
+const LAST_POLICY_KEY = 'sclrit:last-policy'
 
 /**
  * Open the policy picker and resolve with the chosen Hot Folder id, or null
@@ -21,11 +21,11 @@ export async function pickPolicy(fileCount: number): Promise<string | null> {
 	try {
 		policyList = await fetchPolicies()
 	} catch (error) {
-		showError(t('files_seclore', 'Could not load the Seclore policies: {message}', { message: ocsErrorMessage(error) }))
+		showError(t('sclrit', 'Could not load the Seclore policies: {message}', { message: ocsErrorMessage(error) }))
 		return null
 	}
 	if (policyList.policies.length === 0) {
-		showError(t('files_seclore', 'No Seclore policies are available.'))
+		showError(t('sclrit', 'No Seclore policies are available.'))
 		return null
 	}
 

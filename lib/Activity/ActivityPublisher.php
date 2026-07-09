@@ -6,9 +6,9 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\FilesSeclore\Activity;
+namespace OCA\Sclrit\Activity;
 
-use OCA\FilesSeclore\AppInfo\Application;
+use OCA\Sclrit\AppInfo\Application;
 use OCP\Activity\IManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\Files\File;
@@ -21,7 +21,7 @@ use Psr\Log\LoggerInterface;
  * activity stream must never fail a protect/unprotect operation.
  */
 final class ActivityPublisher {
-	public const TYPE = 'files_seclore';
+	public const TYPE = 'sclrit';
 
 	public const SUBJECT_PROTECTED = 'file_protected';
 	public const SUBJECT_UNPROTECTED = 'file_unprotected';

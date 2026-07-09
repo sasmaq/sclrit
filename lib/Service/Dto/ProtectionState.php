@@ -6,9 +6,9 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\FilesSeclore\Service\Dto;
+namespace OCA\Sclrit\Service\Dto;
 
-use OCA\FilesSeclore\Db\SecloreState;
+use OCA\Sclrit\Db\SecloreState;
 
 /**
  * API-facing projection of a file's protection state (SDD §4.3 `state` object).

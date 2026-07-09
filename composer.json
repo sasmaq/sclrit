@@ -1,5 +1,5 @@
 {
-    "name": "sclrit/files_seclore",
+    "name": "sclrit/sclrit",
     "description": "Nextcloud app: protect files on demand with Seclore Enterprise DRM",
     "type": "project",
     "license": "AGPL-3.0-or-later",
@@ -12,12 +12,12 @@
     },
     "autoload": {
         "psr-4": {
-            "OCA\\FilesSeclore\\": "lib/"
+            "OCA\\Sclrit\\": "lib/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "OCA\\FilesSeclore\\Tests\\": "tests/"
+            "OCA\\Sclrit\\Tests\\": "tests/"
         }
     },
     "config": {

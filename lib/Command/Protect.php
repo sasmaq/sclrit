@@ -6,12 +6,12 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\FilesSeclore\Command;
+namespace OCA\Sclrit\Command;
 
-use OCA\FilesSeclore\Exceptions\AlreadyProtectedException;
-use OCA\FilesSeclore\Exceptions\InProgressException;
-use OCA\FilesSeclore\Exceptions\UnsupportedFileException;
-use OCA\FilesSeclore\Service\ProtectionService;
+use OCA\Sclrit\Exceptions\AlreadyProtectedException;
+use OCA\Sclrit\Exceptions\InProgressException;
+use OCA\Sclrit\Exceptions\UnsupportedFileException;
+use OCA\Sclrit\Service\ProtectionService;
 use OCP\Files\File;
 use OCP\Files\Folder;
 use OCP\Files\IRootFolder;
@@ -24,7 +24,7 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
- * occ files_seclore:protect — admin/batch protection (SDD §4.4).
+ * occ sclrit:protect — admin/batch protection (SDD §4.4).
  * Always runs synchronously, streaming one result line per file.
  * Exit codes: 0 all protected/skipped, 1 at least one failure, 2 usage error.
  */
@@ -39,7 +39,7 @@ class Protect extends Command {
 
 	protected function configure(): void {
 		$this
-			->setName('files_seclore:protect')
+			->setName('sclrit:protect')
 			->setDescription('Protect a file (or, with --recursive, all files under a folder) with Seclore')
 			->addArgument('path', InputArgument::REQUIRED, 'Path relative to the user\'s files, e.g. /Documents/contract.pdf')
 			->addOption('user', 'u', InputOption::VALUE_REQUIRED, 'Owner of the path; the protection runs as this user')

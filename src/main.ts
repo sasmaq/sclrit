@@ -36,10 +36,10 @@ interface SecloreCapabilities {
 }
 
 const capabilities: SecloreCapabilities =
-	((getCapabilities() as Record<string, unknown>).files_seclore ?? {}) as SecloreCapabilities
+	((getCapabilities() as Record<string, unknown>).sclrit ?? {}) as SecloreCapabilities
 
 // Expose the protection flag on PROPFIND results (SDD §4.5).
-const PROTECTED_ATTRIBUTE = 'metadata-files_seclore-protected'
+const PROTECTED_ATTRIBUTE = 'metadata-sclrit-protected'
 registerDavProperty('nc:' + PROTECTED_ATTRIBUTE, { nc: 'http://nextcloud.org/ns' })
 
 const HIDDEN_VIEWS = ['trashbin', 'versions']
@@ -93,7 +93,7 @@ async function protectNodes(nodes: Node[]): Promise<(boolean | null)[]> {
 			}
 			return true
 		} catch (error) {
-			showError(t('files_seclore', 'Could not protect "{file}": {message}', {
+			showError(t('sclrit', 'Could not protect "{file}": {message}', {
 				file: node.basename,
 				message: ocsErrorMessage(error),
 			}))
@@ -102,11 +102,11 @@ async function protectNodes(nodes: Node[]): Promise<(boolean | null)[]> {
 	})
 
 	if (protectedCount > 0) {
-		showSuccess(n('files_seclore', '%n file protected with Seclore', '%n files protected with Seclore', protectedCount))
+		showSuccess(n('sclrit', '%n file protected with Seclore', '%n files protected with Seclore', protectedCount))
 	}
 	if (queuedCount > 0) {
 		showInfo(n(
-			'files_seclore',
+			'sclrit',
 			'%n file queued for protection — you will be notified',
 			'%n files queued for protection — you will be notified',
 			queuedCount,
@@ -117,14 +117,14 @@ async function protectNodes(nodes: Node[]): Promise<(boolean | null)[]> {
 
 async function unprotectNodes(nodes: Node[]): Promise<(boolean | null)[]> {
 	const confirmed = await confirmDialog(
-		t('files_seclore', 'Remove protection'),
+		t('sclrit', 'Remove protection'),
 		n(
-			'files_seclore',
+			'sclrit',
 			'Remove Seclore protection from %n file? Its content will no longer be rights-protected. This action is audited.',
 			'Remove Seclore protection from %n files? Their content will no longer be rights-protected. This action is audited.',
 			nodes.length,
 		),
-		t('files_seclore', 'Remove protection'),
+		t('sclrit', 'Remove protection'),
 	)
 	if (!confirmed) {
 		return nodes.map(() => null)
@@ -143,7 +143,7 @@ async function unprotectNodes(nodes: Node[]): Promise<(boolean | null)[]> {
 			}
 			return true
 		} catch (error) {
-			showError(t('files_seclore', 'Could not unprotect "{file}": {message}', {
+			showError(t('sclrit', 'Could not unprotect "{file}": {message}', {
 				file: node.basename,
 				message: ocsErrorMessage(error),
 			}))
@@ -152,11 +152,11 @@ async function unprotectNodes(nodes: Node[]): Promise<(boolean | null)[]> {
 	})
 
 	if (removedCount > 0) {
-		showSuccess(n('files_seclore', 'Protection removed from %n file', 'Protection removed from %n files', removedCount))
+		showSuccess(n('sclrit', 'Protection removed from %n file', 'Protection removed from %n files', removedCount))
 	}
 	if (queuedCount > 0) {
 		showInfo(n(
-			'files_seclore',
+			'sclrit',
 			'%n file queued for unprotection — you will be notified',
 			'%n files queued for unprotection — you will be notified',
 			queuedCount,
@@ -175,8 +175,8 @@ function actionableFiles(nodes: Node[], view: View): boolean {
 
 // "Protect with Seclore" — single file and multi-select (SDD §5.1).
 registerFileAction(new FileAction({
-	id: 'files_seclore-protect',
-	displayName: () => t('files_seclore', 'Protect with Seclore'),
+	id: 'sclrit-protect',
+	displayName: () => t('sclrit', 'Protect with Seclore'),
 	iconSvgInline: () => lockPlusSvg,
 	order: 25,
 
@@ -197,8 +197,8 @@ registerFileAction(new FileAction({
 
 // "Remove protection" — only for users in unprotect_groups (SDD §5.1).
 registerFileAction(new FileAction({
-	id: 'files_seclore-unprotect',
-	displayName: () => t('files_seclore', 'Remove Seclore protection'),
+	id: 'sclrit-unprotect',
+	displayName: () => t('sclrit', 'Remove Seclore protection'),
 	iconSvgInline: () => lockOpenSvg,
 	order: 26,
 
@@ -219,9 +219,9 @@ registerFileAction(new FileAction({
 
 // Inline lock badge on protected files (SDD §5.3); opens the details tab.
 registerFileAction(new FileAction({
-	id: 'files_seclore-status',
-	displayName: () => t('files_seclore', 'Protected with Seclore'),
-	title: () => t('files_seclore', 'Protected with Seclore — open details'),
+	id: 'sclrit-status',
+	displayName: () => t('sclrit', 'Protected with Seclore'),
+	title: () => t('sclrit', 'Protected with Seclore — open details'),
 	iconSvgInline: () => lockSvg,
 	inline: () => true,
 	order: -10,

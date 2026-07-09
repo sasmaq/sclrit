@@ -22,7 +22,7 @@ vi.mock('@nextcloud/dialogs', () => ({
 vi.mock('../../src/components/PolicyPicker.vue', () => ({ default: { name: 'PolicyPicker' } }))
 vi.mock('../../src/components/ConfirmDialog.vue', () => ({ default: { name: 'ConfirmDialog' } }))
 
-const LAST_POLICY_KEY = 'files_seclore:last-policy'
+const LAST_POLICY_KEY = 'sclrit:last-policy'
 
 const policyList = {
 	policies: [

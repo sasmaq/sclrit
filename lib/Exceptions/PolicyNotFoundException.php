@@ -6,7 +6,7 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\FilesSeclore\Exceptions;
+namespace OCA\Sclrit\Exceptions;
 
 /** The requested Hot Folder no longer exists on the Policy Server (SDD §9 E5). */
 class PolicyNotFoundException extends SecloreApiException {
